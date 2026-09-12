@@ -1,0 +1,136 @@
+.split {
+  display: grid;
+  grid-template-columns: 1.05fr 1px 1fr;
+  padding-top: 38px;
+}
+
+.left {
+  padding-right: 38px;
+}
+
+.divider {
+  background: var(--rule);
+}
+
+.right {
+  padding-left: 38px;
+}
+
+.thoughtList {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.thoughtDate {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--rust);
+  letter-spacing: 0.06em;
+}
+
+.thoughtTitle {
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.3;
+  margin-top: 4px;
+  color: var(--ink);
+  text-decoration: none;
+  display: block;
+}
+
+.thoughtTitle:hover {
+  color: var(--rust);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.thoughtDek {
+  margin: 6px 0 0;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--ink-quiet);
+}
+
+.recipeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px 20px;
+}
+
+.card {
+  text-decoration: none;
+  display: block;
+}
+
+.thumb {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: var(--paper-deep);
+}
+
+.cardTitle {
+  font-size: 17.5px;
+  font-weight: 500;
+  line-height: 1.3;
+  margin-top: 9px;
+  color: var(--ink);
+}
+
+.card:hover .cardTitle {
+  color: var(--rust);
+}
+
+.cardMeta {
+  font-size: 11.5px;
+  color: var(--moss);
+  margin-top: 3px;
+}
+
+.more {
+  display: inline-block;
+  margin-top: 26px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--rust);
+  text-decoration: none;
+}
+
+.more:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.empty {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-quiet);
+  margin: 0;
+}
+
+@media (max-width: 860px) {
+  .split {
+    grid-template-columns: 1fr;
+    gap: 34px;
+    padding-top: 24px;
+  }
+
+  .left,
+  .right {
+    padding: 0;
+  }
+
+  .divider {
+    display: none;
+  }
+
+  .recipeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .thumb {
+    height: 150px;
+  }
+}

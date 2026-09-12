@@ -1,0 +1,183 @@
+.bar {
+  background: var(--forest);
+  color: var(--mint);
+  padding: 14px var(--gutter);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.barLinks {
+  display: flex;
+  gap: 20px;
+  align-items: baseline;
+  font-size: 13.5px;
+}
+
+.barLinks a,
+.barLinks button {
+  color: var(--linen-on-dark);
+  text-decoration: none;
+  background: none;
+  border: 0;
+  font-size: 13.5px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.barLinks a:hover,
+.barLinks button:hover {
+  color: var(--mint);
+  text-decoration: underline;
+}
+
+.wrap {
+  max-width: 860px;
+  margin: 0 auto;
+  /* The bottom padding keeps the sticky save bar from sitting on the last field. */
+  padding: 40px var(--gutter) 120px;
+}
+
+.field {
+  display: block;
+  margin-bottom: 18px;
+}
+
+.label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--moss);
+  margin-bottom: 6px;
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--ink-quiet);
+  margin: 5px 0 0;
+  font-style: italic;
+}
+
+.input,
+.textarea,
+.select {
+  width: 100%;
+  font-family: var(--serif);
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--mint);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 9px 11px;
+}
+
+.textarea {
+  min-height: 380px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.row > * {
+  flex: 1 1 160px;
+}
+
+.button {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+  background: var(--rust);
+  color: var(--mint);
+  border: 0;
+  border-radius: 3px;
+  padding: 10px 22px;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--evergreen);
+}
+
+.buttonGhost {
+  composes: button;
+  background: transparent;
+  color: var(--rust);
+  border: 1px solid var(--rule);
+}
+
+.buttonGhost:hover {
+  background: var(--paper-deep);
+  color: var(--rust);
+}
+
+.buttonSmall {
+  font-family: var(--serif);
+  font-size: 13px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 5px 10px;
+  cursor: pointer;
+  color: var(--ink-quiet);
+}
+
+.listRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.status {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--moss);
+}
+
+.statusDraft {
+  color: var(--rust);
+}
+
+.error {
+  background: #f0d9cd;
+  border: 1px solid var(--rust);
+  color: #5b3423;
+  padding: 10px 14px;
+  border-radius: 3px;
+  font-size: 14.5px;
+  margin-bottom: 18px;
+}
+
+.repeatRow {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  background: var(--paper);
+  box-shadow: 0 -14px 18px -4px var(--paper);
+  border-top: 1px solid var(--rule);
+  padding: 14px 0;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}

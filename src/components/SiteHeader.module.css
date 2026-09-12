@@ -1,0 +1,142 @@
+.dark {
+  background: var(--forest);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px var(--gutter);
+  border-bottom: 1px solid rgba(243, 248, 242, 0.12);
+}
+
+.barPlain {
+  border-bottom: 0;
+  padding-block: 14px;
+}
+
+.eyebrow {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sage-dim);
+}
+
+.wordmarkSmall {
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--mint);
+  text-decoration: none;
+}
+
+.wordmarkSmall:hover {
+  color: var(--mint);
+  text-decoration: underline;
+}
+
+.nav {
+  display: flex;
+  gap: 24px;
+}
+
+.navLink {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--linen-on-dark);
+  text-decoration: none;
+}
+
+.navLink:hover,
+.navLink[data-current='true'] {
+  color: var(--mint);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.hero {
+  padding: 46px var(--gutter) 44px;
+  text-align: center;
+}
+
+.wordmark {
+  font-size: clamp(58px, 12vw, 96px);
+  font-weight: 300;
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  color: var(--mint);
+  margin: 0;
+}
+
+.tagline {
+  margin: 16px auto 0;
+  max-width: 470px;
+  font-size: 16.5px;
+  line-height: 1.65;
+  color: var(--sage);
+}
+
+.menuButton {
+  display: none;
+  background: none;
+  border: 0;
+  padding: 4px 2px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--linen-on-dark);
+  cursor: pointer;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 49, 32, 0.6);
+  z-index: 40;
+}
+
+.sheet {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  background: var(--forest);
+  padding: 18px var(--gutter) 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sheetTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.sheetLink {
+  font-size: 24px;
+  font-weight: 300;
+  color: var(--mint);
+  text-decoration: none;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(243, 248, 242, 0.12);
+}
+
+@media (max-width: 700px) {
+  .nav {
+    display: none;
+  }
+
+  .menuButton {
+    display: block;
+  }
+
+  .hero {
+    padding: 6px var(--gutter) 30px;
+  }
+
+  .tagline {
+    font-size: 15px;
+  }
+}

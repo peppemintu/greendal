@@ -1,0 +1,218 @@
+@font-face {
+  font-family: 'Orange Juice';
+  src: url('/fonts/orange-juice.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Surfaces, dark to light */
+  --evergreen: #0d3120;
+  --forest: #132a1e;
+  --ink: #14231a;
+  --ink-soft: #1b2a22;
+  --ink-quiet: #3e4c42;
+  --moss: #44513f;
+  --paper: #dedad3;
+  --paper-deep: #d0cac1;
+  --paper-dim: #cfcbc3;
+  --mint: #f3f8f2;
+  --sage: #a7bdad;
+  --sage-dim: #9fb6a6;
+  --linen-on-dark: #dce6dc;
+
+  /* Accents */
+  --rust: #744b30;
+  --clay: #c08a5e;
+
+  --rule: rgba(13, 49, 32, 0.2);
+  --rule-soft: rgba(13, 49, 32, 0.16);
+  --rule-dashed: rgba(13, 49, 32, 0.22);
+
+  --serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --hand: 'Orange Juice', 'Newsreader', cursive;
+
+  --measure: 34rem;
+  --gutter: 44px;
+  --radius: 4px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--paper);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");
+  font-family: var(--serif);
+  font-weight: 300;
+  color: var(--ink);
+  font-optical-sizing: auto;
+  text-rendering: optimizeLegibility;
+}
+
+main {
+  flex: 1;
+}
+
+a {
+  color: var(--rust);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--forest);
+}
+
+:focus-visible {
+  outline: 2px solid var(--rust);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button {
+  font-family: inherit;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 300;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+/* The handwritten section marks: "thoughts", "recipes", "method", "ps". */
+.hand {
+  font-family: var(--hand);
+  line-height: 1;
+  color: var(--rust);
+}
+
+.shell {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding-inline: var(--gutter);
+}
+
+.shell--narrow {
+  max-width: 720px;
+}
+
+/* Section head: handwritten word, then a rule running to the edge. */
+.sectionMark {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.sectionMark .hand {
+  font-size: 30px;
+}
+
+.sectionMark::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+/* Long-form prose, used by post bodies and the about page. */
+.prose {
+  font-size: 19.5px;
+  line-height: 1.75;
+  color: var(--ink-soft);
+  max-width: var(--measure);
+}
+
+.prose p {
+  margin: 0 0 20px;
+}
+
+.prose h2 {
+  font-size: 28px;
+  line-height: 1.25;
+  margin: 34px 0 12px;
+  color: var(--ink);
+}
+
+.prose h3 {
+  font-size: 22px;
+  margin: 28px 0 8px;
+  color: var(--ink);
+}
+
+.prose blockquote {
+  margin: 30px 0;
+  padding: 2px 0 2px 22px;
+  border-left: 3px solid var(--rust);
+  font-style: italic;
+  font-size: 21px;
+  line-height: 1.6;
+  color: #28382e;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 22px;
+  margin: 0 0 20px;
+}
+
+.prose li {
+  margin-bottom: 8px;
+}
+
+.prose img {
+  margin: 28px 0;
+  border-radius: var(--radius);
+}
+
+.prose code {
+  font: 400 0.85em ui-monospace, Menlo, monospace;
+  background: var(--paper-deep);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 34px 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 700px) {
+  :root {
+    --gutter: 20px;
+  }
+
+  .prose {
+    font-size: 17.5px;
+  }
+}
