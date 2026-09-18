@@ -32,6 +32,14 @@ jobs:
       - name: Build and restart
         run: docker compose up -d --build
 
+      - name: Apply schema changes
+        # Additive changes (new table/column) apply without asking anything.
+        # `drizzle-kit push` prompts on anything ambiguous (e.g. a rename it
+        # can't distinguish from a drop+add) — stdin from /dev/null makes
+        # that prompt fail the step instead of hanging the runner, so a
+        # change like that has to be applied by hand once, deliberately.
+        run: docker compose exec -T app npx drizzle-kit push < /dev/null
+
       - name: Smoke test
         run: |
           for i in $(seq 1 10); do

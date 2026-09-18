@@ -101,9 +101,17 @@ GitHub for work, which needs no open ports.
    writes `.env` itself, so secrets never pass through CI logs.
 
 After that, every push to `main` (including a merged PR) rebuilds the image, restarts
-the container, smoke-tests `http://127.0.0.1:3000/`, and prunes old images. `data/` and
+the container, applies schema changes (`drizzle-kit push` — new tables/columns land
+automatically), smoke-tests `http://127.0.0.1:3000/`, and prunes old images. `data/` and
 `public/uploads/` are gitignored and untouched by the checkout (`clean: false` keeps it
 that way), so real content survives every deploy.
+
+That schema step isn't real migrations — no version history, no rollback, just "make the
+live schema match `src/lib/schema.ts`". It applies additive changes (a new table, a new
+column) without asking anything. Anything it can't apply unambiguously (e.g. a rename it
+can't tell apart from a drop+add) makes the step fail rather than guess — when that
+happens, run `docker compose exec app npx drizzle-kit push` by hand on the runner and
+answer its prompt, then push again.
 
 ## Deploying on your own machine (without Docker)
 
