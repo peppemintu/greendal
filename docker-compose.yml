@@ -1,0 +1,27 @@
+services:
+  app:
+    build: .
+    image: greendal:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_PATH: /app/data/greendal.db
+    volumes:
+      - ./data:/app/data
+      - ./public/uploads:/app/public/uploads
+    ports:
+      # Bound to localhost only — cloudflared (or any reverse proxy) reaches
+      # it over the host loopback, port 3000 is never exposed to the LAN/internet.
+      - "127.0.0.1:3000:3000"
+
+  # Uncomment to run the tunnel from this same compose file. Needs
+  # CLOUDFLARE_TUNNEL_TOKEN set in .env — see the README for how to get one.
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   restart: unless-stopped
+  #   command: tunnel run
+  #   environment:
+  #     TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+  #   depends_on:
+  #     - app

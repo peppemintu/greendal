@@ -36,7 +36,50 @@ SITE_URL=https://yourdomain.example    # used by RSS and OG tags
 
 Sign in at `/admin/login`.
 
-## Deploying on your own machine
+## Running it with Docker
+
+```bash
+cp .env.example .env             # then edit it — same three values as above
+docker compose up -d --build
+docker compose exec app node scripts/seed.mjs   # optional: sample content
+```
+
+The app listens on `127.0.0.1:3000` on the host (not exposed to the LAN/internet
+directly — see the tunnel section below). `data/` and `public/uploads/` are bind-mounted
+from the repo root, so they survive rebuilds; back them up the same way as a bare-metal
+install. There's no automatic migration step: either run `scripts/seed.mjs` (creates the
+tables and fills them with sample content) or `docker compose exec app npx drizzle-kit
+push` (creates the tables, no sample content) once before first use.
+
+To rebuild after pulling: `docker compose up -d --build`.
+
+## Putting it behind a Cloudflare Tunnel
+
+This avoids opening any port on the router — cloudflared makes an outbound connection to
+Cloudflare, which proxies your domain to it. Since the app is bound to `127.0.0.1:3000`,
+nothing is reachable except through the tunnel.
+
+1. **Add the domain to Cloudflare** (if not already): Cloudflare dashboard → *Add a
+   site* → pick the free plan → update your registrar's nameservers to the two
+   Cloudflare gives you. Wait for the zone to go active.
+2. **Create the tunnel**: dashboard → *Zero Trust* → *Networks* → *Tunnels* → *Create a
+   tunnel* → *Cloudflared* → name it (e.g. `greendal`). This gives you a tunnel token.
+3. **Route it to your hostname**: in the tunnel's *Public Hostname* tab, add
+   `yourdomain.example` (or a subdomain) → service `HTTP://app:3000` if you run
+   cloudflared from the compose file below (it talks to `app` over the compose network),
+   or `HTTP://localhost:3000` if you run cloudflared directly on the host instead.
+4. **Run cloudflared**: put the token in `.env` as `CLOUDFLARE_TUNNEL_TOKEN`, then
+   uncomment the `cloudflared` service in `docker-compose.yml` and
+   `docker compose up -d`. (Alternative: install `cloudflared` on the host and run
+   `cloudflared service install <token>` instead of running it in Docker — either works,
+   just keep the hostname target in step 3 consistent with which one you pick.)
+5. **Set `SITE_URL`** in `.env` to `https://yourdomain.example` — it's used for RSS and
+   OG tags, so it needs to match the public hostname, not `localhost`.
+
+No port forwarding, no dynamic DNS, no certificate to manage — Cloudflare terminates TLS
+for you. The tradeoff: your domain's traffic and DNS live behind Cloudflare's proxy.
+
+## Deploying on your own machine (without Docker)
 
 Next needs a running Node process — this is not a folder of static files.
 
