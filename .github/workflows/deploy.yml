@@ -15,11 +15,14 @@ jobs:
   deploy:
     runs-on: self-hosted
     # Windows runners default `run:` steps to PowerShell; these scripts are
-    # written in bash. Requires Git for Windows on the runner (it already
-    # needs git.exe for actions/checkout, which brings bash.exe with it).
+    # written in bash. Plain `shell: bash` resolves via PATH, and on many
+    # Windows boxes C:\Windows\System32\bash.exe — a legacy WSL launcher
+    # shim — comes first and gets picked instead of Git for Windows' bash,
+    # so it's pinned to the real one explicitly. --noprofile --norc -eo
+    # pipefail matches what `shell: bash` uses by default elsewhere.
     defaults:
       run:
-        shell: bash
+        shell: 'C:\Program Files\Git\bin\bash.exe --noprofile --norc -eo pipefail {0}'
     steps:
       - name: Check out
         uses: actions/checkout@v4
