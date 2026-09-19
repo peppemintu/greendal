@@ -56,13 +56,22 @@ jobs:
       - name: Build and restart
         run: docker compose up -d --build
 
-      - name: Apply schema changes
-        # Additive changes (new table/column) apply without asking anything.
-        # `drizzle-kit push` prompts on anything ambiguous (e.g. a rename it
-        # can't distinguish from a drop+add) — stdin from /dev/null makes
-        # that prompt fail the step instead of hanging the runner, so a
-        # change like that has to be applied by hand once, deliberately.
-        run: docker compose exec -T app npx drizzle-kit push < /dev/null
+      - name: Back up database before migrating
+        # The one moment schema changes actually happen. Keep the last 10
+        # pre-deploy snapshots — cheap insurance against a bad migration.
+        run: |
+          mkdir -p backups
+          if [ -f data/greendal.db ]; then
+            cp data/greendal.db "backups/pre-deploy-$(date +%Y%m%d-%H%M%S).db"
+            ls -1t backups/pre-deploy-*.db | tail -n +11 | xargs -r rm --
+          fi
+
+      - name: Apply migrations
+        # Runs whatever SQL is checked into drizzle/ — no live schema diffing,
+        # no prompts, no guessing. New columns/tables go through `npm run
+        # db:generate` locally (review the SQL, commit it); this just
+        # replays whatever hasn't been applied yet, in order.
+        run: docker compose exec -T app npx drizzle-kit migrate
 
       - name: Smoke test
         run: |

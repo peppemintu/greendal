@@ -10,7 +10,7 @@ are no markdown files to commit.
 | Piece | Choice | Why |
 | --- | --- | --- |
 | Framework | Next.js 15, App Router | Server-rendered pages so posts have real URLs, real `<title>`/OG tags, and an RSS feed |
-| Database | SQLite via better-sqlite3 + Drizzle | One file, no daemon. Backup is `cp data/greendal.db somewhere` |
+| Database | SQLite via better-sqlite3 + Drizzle | One file, no daemon. See [Backups](#backups) |
 | UI primitives | Radix Primitives (Dialog, ToggleGroup) | Unstyled, so they don't fight the design. Radix *Themes* is deliberately not used |
 | Styling | CSS Modules + custom properties | The design is bespoke; a utility framework would be noise |
 | Auth | One password, signed cookie (`jose`) | One author. A user table would be ceremony |
@@ -46,12 +46,31 @@ docker compose exec app node scripts/seed.mjs   # optional: sample content
 
 The app listens on `127.0.0.1:3000` on the host (not exposed to the LAN/internet
 directly — see the tunnel section below). `data/` and `public/uploads/` are bind-mounted
-from the repo root, so they survive rebuilds; back them up the same way as a bare-metal
-install. There's no automatic migration step: either run `scripts/seed.mjs` (creates the
-tables and fills them with sample content) or `docker compose exec app npx drizzle-kit
-push` (creates the tables, no sample content) once before first use.
+from the repo root, so they survive rebuilds; see [Backups](#backups) for keeping copies
+elsewhere too. There's no automatic seed step: `docker compose exec app npx drizzle-kit
+migrate` creates the tables with nothing in them, or `docker compose exec app node
+scripts/seed.mjs` creates them and fills them with sample content — run one once before
+first use.
 
 To rebuild after pulling: `docker compose up -d --build`.
+
+## Schema changes
+
+`src/lib/schema.ts` is the source of truth; nothing else defines table shape (see
+[Backups](#backups) for why that matters — `scripts/seed.mjs` used to have its own copy
+of the `CREATE TABLE` statements, and the two drifted apart).
+
+```bash
+# after editing schema.ts:
+npm run db:generate      # writes a new drizzle/NNNN_*.sql — read it before committing
+git add drizzle/ src/lib/schema.ts
+git commit -m "..."
+```
+
+Commit the generated SQL file along with the schema change. On deploy, `deploy.yml` runs
+`drizzle-kit migrate`, which applies whatever migration files haven't been applied yet, in
+order, and nothing else — no live diffing, no prompts, no guessing at intent. Locally,
+`npm run db:migrate` does the same against your `DATABASE_PATH`.
 
 ## Putting it behind a Cloudflare Tunnel
 
@@ -100,18 +119,41 @@ GitHub for work, which needs no open ports.
    loudly if it's missing rather than silently deploying a broken container; it never
    writes `.env` itself, so secrets never pass through CI logs.
 
-After that, every push to `main` (including a merged PR) rebuilds the image, restarts
-the container, applies schema changes (`drizzle-kit push` — new tables/columns land
-automatically), smoke-tests `http://127.0.0.1:3000/`, and prunes old images. `data/` and
-`public/uploads/` are gitignored and untouched by the checkout (`clean: false` keeps it
-that way), so real content survives every deploy.
+After that, every push to `main` (including a merged PR) rebuilds the image, restarts the
+container, snapshots the database, applies pending migrations (see
+[Schema changes](#schema-changes)), smoke-tests `http://127.0.0.1:3000/`, and prunes old
+images. `data/` and `public/uploads/` are gitignored and untouched by the checkout
+(`clean: false` keeps it that way), so real content survives every deploy.
 
-That schema step isn't real migrations — no version history, no rollback, just "make the
-live schema match `src/lib/schema.ts`". It applies additive changes (a new table, a new
-column) without asking anything. Anything it can't apply unambiguously (e.g. a rename it
-can't tell apart from a drop+add) makes the step fail rather than guess — when that
-happens, run `docker compose exec app npx drizzle-kit push` by hand on the runner and
-answer its prompt, then push again.
+`deploy.yml` used to run `drizzle-kit push` here instead — it diffs the live database
+against `schema.ts` and applies whatever it thinks reconciles them, which for SQLite can
+mean recreating a table (copy data out, drop, recreate, copy back in). The first
+automated deploy did exactly that and silently dropped the sample posts, because
+`scripts/seed.mjs` had created `posts` slightly differently than `schema.ts` describes
+(an inline `UNIQUE` column vs. a named index) — a difference `push` "fixes" by rebuilding
+the table, non-interactively, without asking. Migrations don't have this failure mode:
+the SQL that runs is exactly the SQL that was reviewed and committed, nothing inferred at
+deploy time.
+
+## Backups
+
+`.github/workflows/backup.yml` runs daily (03:00 UTC) on the same self-hosted runner and
+writes into `backups/` (gitignored, sits next to `data/`):
+- `greendal-<timestamp>.db` — a copy of the database
+- `uploads-<timestamp>.tar.gz` — a tarball of `public/uploads/`
+
+It keeps the last 14 of each and deletes older ones. `deploy.yml` additionally snapshots
+the database (not uploads — those don't change on deploy) right before every migration,
+as `backups/pre-deploy-<timestamp>.db`, keeping the last 10.
+
+**To restore**: stop the app (`docker compose stop app`), copy the chosen backup over
+`data/greendal.db` (back up the current one first, in case you picked wrong), then
+`docker compose start app`.
+
+**This is not off-site backup.** Both `backups/` and `data/` live on the same disk, on the
+same machine — a dead drive or a stolen laptop takes both. If that machine is the only
+copy of the blog that matters to you, periodically copying `backups/` somewhere else
+(cloud storage, another machine, a USB drive you don't leave plugged in) is still on you.
 
 ## Deploying on your own machine (without Docker)
 
@@ -137,7 +179,10 @@ Then, for the process itself, either a systemd unit or `pm2 start npm -- start`.
 Three things that will bite you if you skip them:
 
 1. **`data/` and `public/uploads/` are your actual site.** They're gitignored, so a
-   fresh `git clone` has neither. Back both up on a schedule.
+   fresh `git clone` has neither. Back both up on a schedule — see [Backups](#backups);
+   `backup.yml` assumes the self-hosted-runner setup from the Docker/CI sections above,
+   so without those you're on your own for the schedule part (`cron`, Task Scheduler,
+   whatever fits).
 2. **Your machine has to be reachable.** A static IP or dynamic DNS, port 443 open,
    and the box on whenever you want the site up.
 3. **Rebuild after pulling.** `npm ci && npm run build && restart`.
@@ -150,7 +195,8 @@ src/app/admin/actions.ts  every write to the database goes through here
 src/components/           SiteHeader, RecipeDetail (the scaler), the two editors
 src/lib/schema.ts         the data model — read this first
 src/styles/globals.css    design tokens
-scripts/seed.mjs          sample content from the original mockup
+scripts/seed.mjs          applies migrations, then sample content from the original mockup
+drizzle/                  migrations — generated, not hand-edited (see Schema changes)
 ```
 
 ## Notes
