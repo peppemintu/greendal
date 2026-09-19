@@ -1,0 +1,36 @@
+name: Backup database
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # 03:00 UTC daily
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: self-hosted
+    # See deploy.yml for why the shell is pinned like this.
+    defaults:
+      run:
+        shell: 'C:\PROGRA~1\Git\bin\bash.exe --noprofile --norc -eo pipefail {0}'
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          clean: false
+
+      - name: Snapshot database and uploads
+        run: |
+          mkdir -p backups
+          ts=$(date +%Y%m%d-%H%M%S)
+          if [ -f data/greendal.db ]; then
+            cp data/greendal.db "backups/greendal-$ts.db"
+          fi
+          if [ -d public/uploads ]; then
+            tar -czf "backups/uploads-$ts.tar.gz" -C public uploads
+          fi
+
+      - name: Prune old snapshots
+        # Keep the last 14 of each — roughly two weeks at one run a day.
+        run: |
+          ls -1t backups/greendal-*.db 2>/dev/null | tail -n +15 | xargs -r rm --
+          ls -1t backups/uploads-*.tar.gz 2>/dev/null | tail -n +15 | xargs -r rm --

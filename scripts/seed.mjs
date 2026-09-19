@@ -1,10 +1,19 @@
 /**
- * Creates the tables and fills them with the content from the design mockup,
- * so a fresh clone has something to look at. Safe to re-run: it clears first.
+ * Applies migrations, then fills the tables with the content from the design
+ * mockup, so a fresh clone has something to look at. Safe to re-run: it
+ * clears first.
  *
  *   node scripts/seed.mjs
+ *
+ * Table creation used to be duplicated here as hand-written SQL, separate
+ * from src/lib/schema.ts. It drifted from what drizzle-kit generates (a
+ * `UNIQUE` column vs. a named unique index) — harmless on its own, but it's
+ * exactly the kind of difference `drizzle-kit push` "fixes" by recreating
+ * the table. Migrations are the one place table shape gets defined now.
  */
 import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -13,44 +22,7 @@ fs.mkdirSync(path.dirname(file), { recursive: true });
 const db = new Database(file);
 db.pragma('journal_mode = WAL');
 
-db.exec(`
-CREATE TABLE IF NOT EXISTS posts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  slug TEXT NOT NULL UNIQUE,
-  title TEXT NOT NULL,
-  dek TEXT,
-  body TEXT NOT NULL DEFAULT '',
-  status TEXT NOT NULL DEFAULT 'draft',
-  published_at INTEGER,
-  ps_recipe_id INTEGER,
-  ps_text TEXT,
-  created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL
-);
-CREATE TABLE IF NOT EXISTS recipes (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  slug TEXT NOT NULL UNIQUE,
-  title TEXT NOT NULL,
-  intro TEXT,
-  hero_image TEXT,
-  hands_on_minutes INTEGER,
-  total_minutes INTEGER,
-  base_servings INTEGER NOT NULL DEFAULT 2,
-  yield_label TEXT NOT NULL DEFAULT '{n} as dinner',
-  ingredients TEXT NOT NULL DEFAULT '[]',
-  steps TEXT NOT NULL DEFAULT '[]',
-  pull_note TEXT,
-  headnote TEXT,
-  status TEXT NOT NULL DEFAULT 'draft',
-  published_at INTEGER,
-  created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL
-);
-CREATE TABLE IF NOT EXISTS settings (
-  key TEXT PRIMARY KEY,
-  value TEXT NOT NULL
-);
-`);
+migrate(drizzle(db), { migrationsFolder: path.join(import.meta.dirname, '..', 'drizzle') });
 
 const RESET = process.argv.includes('--reset') || true;
 if (RESET) {

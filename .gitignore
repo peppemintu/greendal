@@ -2,6 +2,7 @@ node_modules/
 .next/
 data/
 public/uploads/
+backups/
 .env
 .env.local
 *.log
