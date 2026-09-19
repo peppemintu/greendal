@@ -1,0 +1,54 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# Only one deploy at a time; a second push while one is running waits its turn
+# rather than racing it.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          # data/ and public/uploads/ are gitignored, real content that lives
+          # only on this machine — don't let `git clean` wipe them on checkout.
+          clean: false
+
+      - name: Verify .env is present
+        run: |
+          if [ ! -f .env ]; then
+            echo "::error::.env is missing on this runner. Create it once from .env.example (see README) — it is never checked into git and CI never writes it." >&2
+            exit 1
+          fi
+
+      - name: Build and restart
+        run: docker compose up -d --build
+
+      - name: Apply schema changes
+        # Additive changes (new table/column) apply without asking anything.
+        # `drizzle-kit push` prompts on anything ambiguous (e.g. a rename it
+        # can't distinguish from a drop+add) — stdin from /dev/null makes
+        # that prompt fail the step instead of hanging the runner, so a
+        # change like that has to be applied by hand once, deliberately.
+        run: docker compose exec -T app npx drizzle-kit push < /dev/null
+
+      - name: Smoke test
+        run: |
+          for i in $(seq 1 10); do
+            curl -fsS http://127.0.0.1:3000/ > /dev/null && exit 0
+            sleep 3
+          done
+          echo "::error::App did not respond on :3000 after restart" >&2
+          docker compose logs --tail=100 app
+          exit 1
+
+      - name: Clean up old images
+        run: docker image prune -f

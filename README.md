@@ -79,6 +79,40 @@ nothing is reachable except through the tunnel.
 No port forwarding, no dynamic DNS, no certificate to manage — Cloudflare terminates TLS
 for you. The tradeoff: your domain's traffic and DNS live behind Cloudflare's proxy.
 
+## CI: auto-deploy on push to `main`
+
+`.github/workflows/deploy.yml` redeploys automatically on every push to `main`, via a
+self-hosted GitHub Actions runner on the same machine that serves the site. GitHub can't
+reach into your home network to push a deploy, so the runner does the opposite: it polls
+GitHub for work, which needs no open ports.
+
+**One-time setup, on the machine that will run the site:**
+
+1. GitHub repo → *Settings* → *Actions* → *Runners* → *New self-hosted runner*, pick
+   your OS/arch, and run the download + config commands it shows you. Point the checkout
+   folder it creates at wherever you want the live deployment to live (this becomes the
+   directory `docker compose` runs from).
+2. Install it as a service so it survives reboots and stays running unattended:
+   `sudo ./svc.sh install && sudo ./svc.sh start` (Linux; the runner's docs show the
+   equivalent for other OSes).
+3. In that same directory, do the one-time Docker setup from above —
+   `cp .env.example .env`, fill it in — once. The workflow checks for `.env` and fails
+   loudly if it's missing rather than silently deploying a broken container; it never
+   writes `.env` itself, so secrets never pass through CI logs.
+
+After that, every push to `main` (including a merged PR) rebuilds the image, restarts
+the container, applies schema changes (`drizzle-kit push` — new tables/columns land
+automatically), smoke-tests `http://127.0.0.1:3000/`, and prunes old images. `data/` and
+`public/uploads/` are gitignored and untouched by the checkout (`clean: false` keeps it
+that way), so real content survives every deploy.
+
+That schema step isn't real migrations — no version history, no rollback, just "make the
+live schema match `src/lib/schema.ts`". It applies additive changes (a new table, a new
+column) without asking anything. Anything it can't apply unambiguously (e.g. a rename it
+can't tell apart from a drop+add) makes the step fail rather than guess — when that
+happens, run `docker compose exec app npx drizzle-kit push` by hand on the runner and
+answer its prompt, then push again.
+
 ## Deploying on your own machine (without Docker)
 
 Next needs a running Node process — this is not a folder of static files.
