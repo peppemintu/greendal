@@ -18,6 +18,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           greendal <span style={{ fontSize: 13, color: 'var(--sage)' }}>writing desk</span>
         </Link>
         <div className={styles.barLinks}>
+          <Link href="/admin/comments">comments</Link>
+          <Link href="/admin/readers">readers</Link>
           <Link href="/admin/settings">site text</Link>
           <Link href="/account">account</Link>
           <Link href="/">view site</Link>

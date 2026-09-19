@@ -1,20 +1,34 @@
 import Link from 'next/link';
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { posts, recipes } from '@/lib/schema';
+import { posts, recipes, comments } from '@/lib/schema';
 import { shortDate } from '@/lib/format';
 import styles from '../admin.module.css';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Desk() {
-  const [allPosts, allRecipes] = await Promise.all([
+  const [allPosts, allRecipes, visibleComments] = await Promise.all([
     db.select().from(posts).orderBy(desc(posts.updatedAt)),
     db.select().from(recipes).orderBy(desc(recipes.updatedAt)),
+    db.select({ visibility: comments.visibility }).from(comments).where(eq(comments.status, 'visible')),
   ]);
+  const privateCount = visibleComments.filter((c) => c.visibility === 'private').length;
 
   return (
     <>
+      <div style={{ marginBottom: 34, fontSize: 14.5 }}>
+        <Link href="/admin/comments">
+          {visibleComments.length} comment{visibleComments.length === 1 ? '' : 's'}
+        </Link>
+        {privateCount > 0 && (
+          <span style={{ color: 'var(--ink-quiet)' }}>
+            {' '}
+            · {privateCount} private
+          </span>
+        )}
+      </div>
+
       <section style={{ marginBottom: 46 }}>
         <div className="sectionMark">
           <span className="hand">thoughts</span>

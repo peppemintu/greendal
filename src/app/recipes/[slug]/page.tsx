@@ -3,8 +3,11 @@ import type { Metadata } from 'next';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import { RecipeDetail } from '@/components/RecipeDetail';
+import { CommentSection } from '@/components/CommentSection';
 import { getRecipe, getSettings } from '@/lib/queries';
 import type { Ingredient, Step } from '@/lib/schema';
+import { getCurrentUser } from '@/lib/auth';
+import { getCommentThread } from '@/lib/comments';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +33,9 @@ export default async function RecipePage({ params }: { params: Promise<{ slug: s
   const { slug } = await params;
   const recipe = await getRecipe(slug);
   if (!recipe || recipe.status !== 'published') notFound();
-  const settings = await getSettings();
+  const [settings, currentUser] = await Promise.all([getSettings(), getCurrentUser()]);
+  const viewer = currentUser && { id: currentUser.id, role: currentUser.role };
+  const thread = await getCommentThread({ recipeId: recipe.id }, viewer);
 
   return (
     <>
@@ -51,6 +56,9 @@ export default async function RecipePage({ params }: { params: Promise<{ slug: s
             headnote: recipe.headnote,
           }}
         />
+        <div style={{ maxWidth: 720, margin: '0 auto' }}>
+          <CommentSection target={{ recipeId: recipe.id }} nodes={thread.nodes} visibleCount={thread.visibleCount} />
+        </div>
       </main>
       <SiteFooter note={settings.footerNote} />
     </>
