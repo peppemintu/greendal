@@ -36,8 +36,10 @@ jobs:
 
       - name: Verify .env is present
         run: |
+          echo "Working directory: $(pwd)"
+          ls -la
           if [ ! -f .env ]; then
-            echo "::error::.env is missing on this runner. Create it once from .env.example (see README) — it is never checked into git and CI never writes it." >&2
+            echo "::error::.env is missing in the directory above. Create it once from .env.example (see README) — it is never checked into git and CI never writes it. If it's on disk somewhere else, it needs to be in this exact folder (the runner's checkout of this repo), not wherever it was manually placed." >&2
             exit 1
           fi
 
