@@ -1,10 +1,16 @@
 import Link from 'next/link';
-import { logout } from '../actions';
+import { logout } from '@/app/(auth)/actions';
+import { requireAdmin } from '@/lib/auth';
 import styles from '../admin.module.css';
 
 export const metadata = { title: 'writing desk', robots: { index: false, follow: false } };
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  // The one place a reader gets stopped from ever seeing the admin UI.
+  // Every action under here checks requireAdmin() itself too — this layout
+  // guards the page, not the mutations a page's forms submit to.
+  await requireAdmin();
+
   return (
     <>
       <div className={styles.bar}>
@@ -13,6 +19,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </Link>
         <div className={styles.barLinks}>
           <Link href="/admin/settings">site text</Link>
+          <Link href="/account">account</Link>
           <Link href="/">view site</Link>
           <form action={logout}>
             <button type="submit">sign out</button>

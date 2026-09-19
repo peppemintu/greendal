@@ -1,0 +1,123 @@
+/* Shared by every form on the site — admin editors and the public
+   login/register/account pages alike. Keep this the one source of truth for
+   what a field, button, or error banner looks like. */
+
+.field {
+  display: block;
+  margin-bottom: 18px;
+}
+
+.label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--moss);
+  margin-bottom: 6px;
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--ink-quiet);
+  margin: 5px 0 0;
+  font-style: italic;
+}
+
+.input,
+.textarea,
+.select {
+  width: 100%;
+  font-family: var(--serif);
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--mint);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 9px 11px;
+}
+
+.textarea {
+  min-height: 380px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.row > * {
+  flex: 1 1 160px;
+}
+
+.button {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+  background: var(--rust);
+  color: var(--mint);
+  border: 0;
+  border-radius: 3px;
+  padding: 10px 22px;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--evergreen);
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.buttonGhost {
+  composes: button;
+  background: transparent;
+  color: var(--rust);
+  border: 1px solid var(--rule);
+}
+
+.buttonGhost:hover {
+  background: var(--paper-deep);
+  color: var(--rust);
+}
+
+.buttonSmall {
+  font-family: var(--serif);
+  font-size: 13px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 5px 10px;
+  cursor: pointer;
+  color: var(--ink-quiet);
+}
+
+.error {
+  background: #f0d9cd;
+  border: 1px solid var(--rust);
+  color: #5b3423;
+  padding: 10px 14px;
+  border-radius: 3px;
+  font-size: 14.5px;
+  margin-bottom: 18px;
+}
+
+.message {
+  composes: error;
+  background: var(--paper-deep);
+  border-color: var(--rule);
+  color: var(--ink-soft);
+}
+
+.honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}

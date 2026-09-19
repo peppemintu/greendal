@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { posts, recipes, settings } from '@/lib/schema';
-import { checkPassword, createSession, destroySession } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 import { slugify } from '@/lib/format';
 
 type State = { error?: string } | undefined;
@@ -31,20 +31,8 @@ function num(form: FormData, key: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export async function login(_prev: State, form: FormData): Promise<State> {
-  const password = str(form, 'password');
-  if (!password) return { error: 'Enter your password.' };
-  if (!checkPassword(password)) return { error: "That password doesn't match." };
-  await createSession();
-  redirect(str(form, 'next') || '/admin');
-}
-
-export async function logout() {
-  await destroySession();
-  redirect('/admin/login');
-}
-
 export async function savePost(_prev: State, form: FormData): Promise<State> {
+  await requireAdmin();
   const idRaw = str(form, 'id');
   const title = str(form, 'title');
   if (!title) return { error: 'A thought needs a title before it can be saved.' };
@@ -87,6 +75,7 @@ export async function savePost(_prev: State, form: FormData): Promise<State> {
 }
 
 export async function saveRecipe(_prev: State, form: FormData): Promise<State> {
+  await requireAdmin();
   const idRaw = str(form, 'id');
   const title = str(form, 'title');
   if (!title) return { error: 'A recipe needs a title before it can be saved.' };
@@ -135,6 +124,7 @@ export async function saveRecipe(_prev: State, form: FormData): Promise<State> {
 }
 
 export async function deletePost(form: FormData) {
+  await requireAdmin();
   const id = Number(form.get('id'));
   if (id) await db.delete(posts).where(eq(posts.id, id));
   revalidatePath('/');
@@ -142,6 +132,7 @@ export async function deletePost(form: FormData) {
 }
 
 export async function deleteRecipe(form: FormData) {
+  await requireAdmin();
   const id = Number(form.get('id'));
   if (id) await db.delete(recipes).where(eq(recipes.id, id));
   revalidatePath('/');
@@ -149,6 +140,7 @@ export async function deleteRecipe(form: FormData) {
 }
 
 export async function saveSettings(_prev: State, form: FormData): Promise<State> {
+  await requireAdmin();
   const keys = ['tagline', 'footerNote', 'aboutTitle', 'aboutBody'];
   for (const key of keys) {
     const value = String(form.get(key) ?? '');

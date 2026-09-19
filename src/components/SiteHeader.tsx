@@ -6,6 +6,8 @@ import { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Squiggle } from './Squiggle';
+import { useCurrentUser } from '@/lib/UserContext';
+import { logout } from '@/app/(auth)/actions';
 import styles from './SiteHeader.module.css';
 
 const LINKS = [
@@ -13,6 +15,38 @@ const LINKS = [
   { href: '/recipes', label: 'recipes' },
   { href: '/about', label: 'about' },
 ];
+
+function AccountLinks({ sheet, onNavigate }: { sheet?: boolean; onNavigate?: () => void }) {
+  const user = useCurrentUser();
+  const linkClass = sheet ? styles.sheetLink : styles.navLink;
+  const buttonClass = sheet ? styles.sheetButton : styles.navButton;
+
+  if (!user) {
+    return (
+      <Link href="/login" className={linkClass} onClick={onNavigate}>
+        sign in
+      </Link>
+    );
+  }
+
+  return (
+    <>
+      {user.role === 'admin' && (
+        <Link href="/admin" className={linkClass} onClick={onNavigate}>
+          write
+        </Link>
+      )}
+      <Link href="/account" className={linkClass} onClick={onNavigate}>
+        {user.displayName}
+      </Link>
+      <form action={logout}>
+        <button className={buttonClass} type="submit" onClick={onNavigate}>
+          sign out
+        </button>
+      </form>
+    </>
+  );
+}
 
 export function SiteHeader({
   variant = 'compact',
@@ -47,6 +81,8 @@ export function SiteHeader({
               {link.label}
             </Link>
           ))}
+          <span className={styles.navDivider} aria-hidden="true" />
+          <AccountLinks />
         </nav>
 
         <Dialog.Root open={open} onOpenChange={setOpen}>
@@ -75,6 +111,7 @@ export function SiteHeader({
                   {link.label}
                 </Link>
               ))}
+              <AccountLinks sheet onNavigate={() => setOpen(false)} />
             </Dialog.Content>
           </Dialog.Portal>
         </Dialog.Root>
