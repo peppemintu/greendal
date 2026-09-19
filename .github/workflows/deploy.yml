@@ -34,6 +34,16 @@ jobs:
           # only on this machine — don't let `git clean` wipe them on checkout.
           clean: false
 
+      - name: Show run context
+        # Docker Desktop's named pipe is only reachable by whoever is in the
+        # docker-users group (or an interactive session that started it) —
+        # if the runner service logs on as a different account, docker
+        # commands fail with "permission denied" regardless of what the
+        # workflow does. This makes that account visible in the log.
+        run: |
+          echo "Running as: $(whoami)"
+          docker version || true
+
       - name: Verify .env is present
         run: |
           echo "Working directory: $(pwd)"
