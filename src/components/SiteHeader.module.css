@@ -56,6 +56,21 @@
   text-underline-offset: 4px;
 }
 
+.navButton {
+  composes: navLink;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.navDivider {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(243, 248, 242, 0.16);
+}
+
 .hero {
   padding: 46px var(--gutter) 44px;
   text-align: center;
@@ -121,6 +136,21 @@
   text-decoration: none;
   padding: 10px 0;
   border-bottom: 1px solid rgba(243, 248, 242, 0.12);
+}
+
+.sheetButton {
+  composes: sheetLink;
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  /* Buttons carry a UA border unlike <a> — reset it, then reapply just the
+     underline rule (both in this rule, so order here is what decides, not
+     load order against the composed .sheetLink). */
+  border: 0;
+  border-bottom: 1px solid rgba(243, 248, 242, 0.12);
+  cursor: pointer;
+  font-family: inherit;
 }
 
 @media (max-width: 700px) {

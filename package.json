@@ -8,7 +8,8 @@
     "start": "next start",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "seed": "node scripts/seed.mjs"
+    "seed": "node scripts/seed.mjs",
+    "create-admin": "node scripts/create-admin.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.6",

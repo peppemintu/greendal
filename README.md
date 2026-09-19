@@ -13,44 +13,50 @@ are no markdown files to commit.
 | Database | SQLite via better-sqlite3 + Drizzle | One file, no daemon. See [Backups](#backups) |
 | UI primitives | Radix Primitives (Dialog, ToggleGroup) | Unstyled, so they don't fight the design. Radix *Themes* is deliberately not used |
 | Styling | CSS Modules + custom properties | The design is bespoke; a utility framework would be noise |
-| Auth | One password, signed cookie (`jose`) | One author. A user table would be ceremony |
+| Auth | DB-backed sessions, `scrypt` passwords | One admin, any number of readers. See [Accounts & email](#accounts--email) |
 | Editor | Markdown for thoughts, a structured form for recipes | Recipe quantities have to stay numeric for the scaler |
 
 ## Running it
 
 ```bash
 npm install
-cp .env.example .env.local     # then edit it — see below
-node scripts/seed.mjs          # optional: fills the DB with sample content
-npm run dev                    # http://localhost:3000
+cp .env.example .env.local          # then edit it — see below
+node scripts/seed.mjs               # optional: fills the DB with sample content
+node scripts/create-admin.mjs       # creates your admin account from ADMIN_EMAIL/ADMIN_PASSWORD
+npm run dev                         # http://localhost:3000
 ```
 
-`.env.local` needs three things:
+`.env.local` needs, at minimum:
 
 ```
 DATABASE_PATH=./data/greendal.db
-SESSION_SECRET=<openssl rand -base64 32>
-ADMIN_PASSWORD=<the password you'll type at /admin/login>
-SITE_URL=https://yourdomain.example    # used by RSS and OG tags
+SITE_URL=http://localhost:3000
+ADMIN_EMAIL=you@example.com
+ADMIN_PASSWORD=<at least 10 characters>
 ```
 
-Sign in at `/admin/login`.
+`EMAIL_PROVIDER` defaults to `console` — registration and password-reset links get printed to the
+terminal instead of emailed, which is all local dev needs. See
+[Accounts & email](#accounts--email) for what a real deployment needs on top of this.
+
+Sign in at `/login` — the same form for the admin and for readers; it sends you to `/admin` or
+back to wherever you came from, depending on the account.
 
 ## Running it with Docker
 
 ```bash
-cp .env.example .env             # then edit it — same three values as above
+cp .env.example .env             # then edit it — same values as above
 docker compose up -d --build
-docker compose exec app node scripts/seed.mjs   # optional: sample content
+docker compose exec app node scripts/create-admin.mjs   # creates your admin account
+docker compose exec app node scripts/seed.mjs           # optional: sample content too
 ```
 
 The app listens on `127.0.0.1:3000` on the host (not exposed to the LAN/internet
 directly — see the tunnel section below). `data/` and `public/uploads/` are bind-mounted
 from the repo root, so they survive rebuilds; see [Backups](#backups) for keeping copies
-elsewhere too. There's no automatic seed step: `docker compose exec app npx drizzle-kit
-migrate` creates the tables with nothing in them, or `docker compose exec app node
-scripts/seed.mjs` creates them and fills them with sample content — run one once before
-first use.
+elsewhere too. `create-admin.mjs` applies migrations itself (same as `seed.mjs`), so either
+one alone is enough to get the tables created — run `create-admin.mjs` at least, since
+without it there's no way to sign in.
 
 To rebuild after pulling: `docker compose up -d --build`.
 
@@ -71,6 +77,50 @@ Commit the generated SQL file along with the schema change. On deploy, `deploy.y
 `drizzle-kit migrate`, which applies whatever migration files haven't been applied yet, in
 order, and nothing else — no live diffing, no prompts, no guessing at intent. Locally,
 `npm run db:migrate` does the same against your `DATABASE_PATH`.
+
+## Accounts & email
+
+Three kinds of visitor: **guests** (no account, read-only), **readers** (registered, can
+comment — see [`docs/design/users-comments-editor.md`](docs/design/users-comments-editor.md) for
+the full design), and **admin** (you — one account, created by `create-admin.mjs`, not through
+`/register`).
+
+Sessions are opaque random tokens in the `sessions` table, not JWTs — a ban or a role change
+takes effect on the very next request instead of waiting for a token to expire. Passwords are
+`scrypt` with a per-account salt. `middleware.ts` only checks that *some* session cookie is
+present (it runs on the Edge runtime, which can't reach the database) — the actual check is
+`getCurrentUser()` in `src/lib/auth.ts`, called by every page and action that needs to know who's
+asking. Admin-only actions call `requireAdmin()` themselves too, not just the `/admin` layout —
+a reader has a valid session cookie same as an admin does, so cookie-presence alone stopped being
+enough to gate `/admin` once readers existed.
+
+Registration is open, which means **outgoing email is required** for it to work for real — a
+reader has to confirm their address before they can comment, and password reset needs somewhere
+to send the link. `EMAIL_PROVIDER=console` (the default) logs mail to stdout instead, which is
+fine for local dev but not for a real deployment.
+
+To send real mail via [Resend](https://resend.com) (free tier is generous for a blog):
+
+1. Create a Resend account, add your domain under *Domains*.
+2. It shows you 3–4 DNS records (DKIM, SPF, usually an MX) — add them in Cloudflare exactly as
+   shown. They'll be on a subdomain like `send.yourdomain.example`, so they won't collide with
+   anything already on the root domain (including Cloudflare Email Routing, if you use that for a
+   separate `you@yourdomain.example` inbox — that's unrelated to sending and entirely optional).
+   If Resend gives you a `CNAME`, set it to "DNS only" (grey cloud) in Cloudflare — a proxied
+   CNAME doesn't work for mail.
+3. Click *Verify* in Resend once the records are saved — with Cloudflare this is usually
+   seconds, not the hours other DNS hosts can take.
+4. Create an API key (*Sending access* is enough) and set in `.env`:
+   ```
+   EMAIL_PROVIDER=resend
+   RESEND_API_KEY=re_...
+   EMAIL_FROM=greendal <no-reply@yourdomain.example>
+   ```
+5. Make sure `SITE_URL` is the real public URL, not `localhost` — it's what verification and
+   reset links are built from.
+
+A `_dmarc` TXT record (`v=DMARC1; p=none; rua=mailto:you@example.com`) isn't required but helps
+deliverability, and `p=none` mode can't break anything — it only asks for reports, not enforcement.
 
 ## Putting it behind a Cloudflare Tunnel
 
@@ -191,12 +241,19 @@ Three things that will bite you if you skip them:
 
 ```
 src/app/                  routes — public pages, /admin, /api/upload, /feed.xml
-src/app/admin/actions.ts  every write to the database goes through here
+src/app/(auth)/           /login /register /forgot /reset /verify — shared by admin and readers
+src/app/admin/actions.ts  every write to posts/recipes/settings goes through here
+src/app/account/          the signed-in reader's (or admin's) own settings
 src/components/           SiteHeader, RecipeDetail (the scaler), the two editors
 src/lib/schema.ts         the data model — read this first
+src/lib/auth.ts           sessions, password hashing, getCurrentUser()/requireAdmin()
+src/lib/email.ts          sendEmail() — console/Resend, picked by EMAIL_PROVIDER
 src/styles/globals.css    design tokens
+src/styles/form.module.css  shared field/button/error styles — admin editors and public forms alike
 scripts/seed.mjs          applies migrations, then sample content from the original mockup
+scripts/create-admin.mjs  applies migrations, then creates/resets the one admin account
 drizzle/                  migrations — generated, not hand-edited (see Schema changes)
+docs/design/               design docs for work in progress
 ```
 
 ## Notes

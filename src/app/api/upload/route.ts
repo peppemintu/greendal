@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isAuthed } from '@/lib/auth';
+import { isAdmin } from '@/lib/auth';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
@@ -8,7 +8,7 @@ const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/g
 const MAX_BYTES = 8 * 1024 * 1024;
 
 export async function POST(request: Request) {
-  if (!(await isAuthed())) {
+  if (!(await isAdmin())) {
     return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
   }
 

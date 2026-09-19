@@ -41,93 +41,43 @@
 }
 
 .field {
-  display: block;
-  margin-bottom: 18px;
+  composes: field from '../../styles/form.module.css';
 }
 
 .label {
-  display: block;
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--moss);
-  margin-bottom: 6px;
+  composes: label from '../../styles/form.module.css';
 }
 
 .hint {
-  font-size: 13px;
-  color: var(--ink-quiet);
-  margin: 5px 0 0;
-  font-style: italic;
+  composes: hint from '../../styles/form.module.css';
 }
 
-.input,
-.textarea,
-.select {
-  width: 100%;
-  font-family: var(--serif);
-  font-size: 16px;
-  color: var(--ink);
-  background: var(--mint);
-  border: 1px solid var(--rule);
-  border-radius: 3px;
-  padding: 9px 11px;
+.input {
+  composes: input from '../../styles/form.module.css';
 }
 
 .textarea {
-  min-height: 380px;
-  line-height: 1.6;
-  resize: vertical;
+  composes: textarea from '../../styles/form.module.css';
+}
+
+.select {
+  composes: select from '../../styles/form.module.css';
 }
 
 .row {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.row > * {
-  flex: 1 1 160px;
+  composes: row from '../../styles/form.module.css';
 }
 
 .button {
-  font-family: var(--serif);
-  font-size: 15px;
-  font-weight: 600;
-  background: var(--rust);
-  color: var(--mint);
-  border: 0;
-  border-radius: 3px;
-  padding: 10px 22px;
-  cursor: pointer;
-}
-
-.button:hover {
-  background: var(--evergreen);
+  composes: button from '../../styles/form.module.css';
 }
 
 .buttonGhost {
-  composes: button;
-  background: transparent;
-  color: var(--rust);
-  border: 1px solid var(--rule);
-}
-
-.buttonGhost:hover {
-  background: var(--paper-deep);
-  color: var(--rust);
+  composes: buttonGhost from '../../styles/form.module.css';
 }
 
 .buttonSmall {
-  font-family: var(--serif);
-  font-size: 13px;
-  background: transparent;
-  border: 1px solid var(--rule);
-  border-radius: 3px;
-  padding: 5px 10px;
-  cursor: pointer;
-  color: var(--ink-quiet);
+  composes: buttonSmall from '../../styles/form.module.css';
 }
 
 .listRow {
@@ -152,13 +102,7 @@
 }
 
 .error {
-  background: #f0d9cd;
-  border: 1px solid var(--rust);
-  color: #5b3423;
-  padding: 10px 14px;
-  border-radius: 3px;
-  font-size: 14.5px;
-  margin-bottom: 18px;
+  composes: error from '../../styles/form.module.css';
 }
 
 .repeatRow {
