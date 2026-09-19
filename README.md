@@ -122,6 +122,34 @@ To send real mail via [Resend](https://resend.com) (free tier is generous for a 
 A `_dmarc` TXT record (`v=DMARC1; p=none; rua=mailto:you@example.com`) isn't required but helps
 deliverability, and `p=none` mode can't break anything — it only asks for reports, not enforcement.
 
+## Comments
+
+Verified readers can comment on posts and recipes, one level of replies deep, public by default
+with an opt-in "only for the blog's author" toggle. The visibility rules (who sees what, who can
+flip what private/public, why a hidden comment isn't quite the same thing as a deleted one) are
+worked out in full in
+[`docs/design/users-comments-editor.md`](docs/design/users-comments-editor.md) §4 — read that
+before touching `src/lib/comments.ts` or `src/lib/commentActions.ts`, the rules have sharper edges
+than they look.
+
+A few things worth knowing if you're extending this:
+
+- **Comment bodies are plain text, never HTML.** `CommentBody` builds React elements directly from
+  the string (auto-escaped by JSX) and only turns `http(s)://` substrings into `<a rel="nofollow
+  ugc noopener">` links — there's no `dangerouslySetInnerHTML`, no HTML string ever gets
+  constructed from what a reader typed. If comments ever grow markdown support, that's a
+  sanitiser-adding project, not a find-and-replace.
+- **Nothing is deleted from the database.** A "deleted" comment is a status flag, not a removed
+  row — same principle as accounts, posts, and recipes elsewhere in this project.
+- **`ThreadNode` (from `getCommentThread()`) carries precomputed permissions** — `canEditNow`,
+  `canDelete`, `canModerate`, `visibilityAction` — so the UI never has to re-derive (or trust) a
+  permission check against a stale clock or role. The actual server actions in
+  `commentActions.ts` re-verify everything themselves regardless; the precomputed fields are for
+  deciding what buttons to show, not a substitute for that.
+- **`/admin/comments`** is the moderation feed (filter by visibility/status/target, reply inline,
+  hide/unhide, delete). **`/admin/readers`** lists registered readers with block/unblock and
+  restoring a closed account.
+
 ## Putting it behind a Cloudflare Tunnel
 
 This avoids opening any port on the router — cloudflared makes an outbound connection to
@@ -248,6 +276,8 @@ src/components/           SiteHeader, RecipeDetail (the scaler), the two editors
 src/lib/schema.ts         the data model — read this first
 src/lib/auth.ts           sessions, password hashing, getCurrentUser()/requireAdmin()
 src/lib/email.ts          sendEmail() — console/Resend, picked by EMAIL_PROVIDER
+src/lib/comments.ts       visibility rules and the threaded query — read before touching either
+src/lib/commentActions.ts create/edit/delete/hide/visibility mutations for comments
 src/styles/globals.css    design tokens
 src/styles/form.module.css  shared field/button/error styles — admin editors and public forms alike
 scripts/seed.mjs          applies migrations, then sample content from the original mockup

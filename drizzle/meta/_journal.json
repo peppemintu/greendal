@@ -15,6 +15,13 @@
       "when": 1789845077009,
       "tag": "0001_superb_the_captain",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1789849890044,
+      "tag": "0002_lovely_mathemanic",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,126 @@
+.section {
+  margin-top: 50px;
+  padding-top: 34px;
+  border-top: 1px solid var(--rule);
+}
+
+.empty {
+  color: var(--ink-quiet);
+  font-size: 15px;
+  margin: 0 0 24px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.node {
+  font-size: 15.5px;
+}
+
+.tombstone {
+  color: var(--ink-quiet);
+  font-style: italic;
+  font-size: 14px;
+  margin: 0;
+}
+
+.meta {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.author {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.date {
+  font-size: 12.5px;
+  color: var(--ink-quiet);
+}
+
+.badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--rust);
+  border: 1px solid var(--rust);
+  border-radius: 3px;
+  padding: 1px 6px;
+}
+
+.actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.actionLink {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 12.5px;
+  color: var(--ink-quiet);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.actionLink:hover {
+  color: var(--rust);
+}
+
+.replies {
+  margin-top: 18px;
+  padding-left: 22px;
+  border-left: 2px solid var(--rule-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.replyForm {
+  margin-top: 14px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.formFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.privateToggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--ink-quiet);
+}
+
+.writeBox {
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid var(--rule-soft);
+}
+
+.prompt {
+  font-size: 15px;
+  color: var(--ink-quiet);
+}

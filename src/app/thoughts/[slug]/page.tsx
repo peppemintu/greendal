@@ -4,12 +4,15 @@ import type { Metadata } from 'next';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import { Squiggle } from '@/components/Squiggle';
+import { CommentSection } from '@/components/CommentSection';
 import { getPost, getNeighbours, getRecipe, getSettings } from '@/lib/queries';
 import { renderMarkdown } from '@/lib/markdown';
 import { longDate, readingTime } from '@/lib/format';
 import { db } from '@/lib/db';
 import { recipes as recipesTable } from '@/lib/schema';
 import { eq } from 'drizzle-orm';
+import { getCurrentUser } from '@/lib/auth';
+import { getCommentThread } from '@/lib/comments';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,10 +35,13 @@ export default async function ThoughtPage({ params }: { params: Promise<{ slug: 
   const post = await getPost(slug);
   if (!post || post.status !== 'published') notFound();
 
-  const [{ prev, next }, settings] = await Promise.all([
+  const [{ prev, next }, settings, currentUser] = await Promise.all([
     getNeighbours(post.publishedAt),
     getSettings(),
+    getCurrentUser(),
   ]);
+  const viewer = currentUser && { id: currentUser.id, role: currentUser.role };
+  const thread = await getCommentThread({ postId: post.id }, viewer);
 
   let psRecipe: { slug: string; title: string } | null = null;
   if (post.psRecipeId) {
@@ -133,6 +139,8 @@ export default async function ThoughtPage({ params }: { params: Promise<{ slug: 
             <span />
           )}
         </nav>
+
+        <CommentSection target={{ postId: post.id }} nodes={thread.nodes} visibleCount={thread.visibleCount} />
       </main>
       <SiteFooter note={settings.footerNote} />
     </>

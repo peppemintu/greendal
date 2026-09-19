@@ -1,4 +1,5 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, index, check, type AnySQLiteColumn } from 'drizzle-orm/sqlite-core';
+import { sql } from 'drizzle-orm';
 
 /** A "thought" — a normal blog post, body written in markdown. */
 export const posts = sqliteTable('posts', {
@@ -122,10 +123,54 @@ export const rateLimits = sqliteTable('rate_limits', {
   resetAt: integer('reset_at').notNull(),
 });
 
+/**
+ * Comments on a post or a recipe — exactly one of postId/recipeId is set
+ * (enforced below), never both and never neither. No FK cascade to posts/
+ * recipes: those are archived, not deleted (see design doc §5), so a
+ * comment never needs to react to its parent disappearing out from under
+ * it. See docs/design/users-comments-editor.md §4 for the full visibility
+ * and moderation rules — src/lib/comments.ts implements them.
+ */
+export const comments = sqliteTable(
+  'comments',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    postId: integer('post_id').references(() => posts.id),
+    recipeId: integer('recipe_id').references(() => recipes.id),
+    authorId: integer('author_id')
+      .notNull()
+      .references(() => users.id),
+    /** null = top-level. One level of nesting only — a reply's parentId always points at a top-level comment. */
+    parentId: integer('parent_id').references((): AnySQLiteColumn => comments.id),
+    /** Plain text, not HTML — see renderCommentBody() in src/lib/comments.ts. */
+    body: text('body').notNull(),
+    visibility: text('visibility', { enum: ['public', 'private'] })
+      .notNull()
+      .default('public'),
+    status: text('status', { enum: ['visible', 'hidden', 'deleted'] })
+      .notNull()
+      .default('visible'),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at').notNull(),
+    editedAt: integer('edited_at'),
+  },
+  (table) => [
+    check(
+      'comments_exactly_one_parent',
+      sql`(${table.postId} is not null and ${table.recipeId} is null) or (${table.postId} is null and ${table.recipeId} is not null)`,
+    ),
+    index('comments_post_created_idx').on(table.postId, table.createdAt),
+    index('comments_recipe_created_idx').on(table.recipeId, table.createdAt),
+    index('comments_author_idx').on(table.authorId),
+    index('comments_parent_idx').on(table.parentId),
+  ],
+);
+
 export type PostRow = typeof posts.$inferSelect;
 export type RecipeRow = typeof recipes.$inferSelect;
 export type UserRow = typeof users.$inferSelect;
 export type SessionRow = typeof sessions.$inferSelect;
+export type CommentRow = typeof comments.$inferSelect;
 
 export type Ingredient = {
   /** null means "no number" — e.g. "flaky salt, to taste". */
