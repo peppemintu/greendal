@@ -14,6 +14,12 @@ concurrency:
 jobs:
   deploy:
     runs-on: self-hosted
+    # Windows runners default `run:` steps to PowerShell; these scripts are
+    # written in bash. Requires Git for Windows on the runner (it already
+    # needs git.exe for actions/checkout, which brings bash.exe with it).
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Check out
         uses: actions/checkout@v4
