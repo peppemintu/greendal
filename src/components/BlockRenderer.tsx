@@ -58,7 +58,7 @@ function BlockItem({
       if (block.style === 'squiggle') {
         return (
           <div className={styles.dividerSquiggle}>
-            <Squiggle width={140} />
+            <Squiggle width={140} seed={block.id} />
           </div>
         );
       }

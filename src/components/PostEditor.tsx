@@ -385,7 +385,7 @@ export function PostEditor({
             {title || 'Untitled'}
           </h1>
           {dek && <p style={{ margin: '10px 0 0', fontSize: 16.5, lineHeight: 1.5, color: 'var(--ink-quiet)' }}>{dek}</p>}
-          <Squiggle width={180} color="var(--rust)" />
+          <Squiggle width={180} color="var(--rust)" seed={effectiveSlug || 'new-post'} />
           <div style={{ marginTop: 26 }}>
             <BlockRenderer blocks={blocks} recipeLinks={recipeLinks} />
           </div>
@@ -435,7 +435,7 @@ export function PostEditor({
           onChange={setDek}
           placeholder="one-line teaser for the home page"
         />
-        <Squiggle width={180} color="var(--rust)" />
+        <Squiggle width={180} color="var(--rust)" seed={effectiveSlug || 'new-post'} />
 
         <div className={styles.blockList} style={{ marginTop: 26 }}>
           <InsertGap
@@ -740,7 +740,7 @@ function BlockBody({
         <div className={styles.dividerBlock}>
           <button type="button" className={styles.dividerButton} onClick={() => onChange({ style: next })}>
             {style === 'squiggle' ? (
-              <Squiggle width={140} />
+              <Squiggle width={140} seed={block.id} />
             ) : style === 'dots' ? (
               <div style={{ display: 'flex', gap: 8 }}>
                 <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sage-dim)' }} />
