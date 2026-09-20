@@ -84,7 +84,7 @@ export default async function ThoughtPage({ params }: { params: Promise<{ slug: 
         >
           {post.title}
         </h1>
-        <Squiggle width={180} color="var(--rust)" />
+        <Squiggle width={180} color="var(--rust)" seed={post.slug} />
 
         <div style={{ marginTop: 26 }}>
           <BlockRenderer blocks={blocks} recipeLinks={recipeLinks} />

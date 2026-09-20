@@ -120,7 +120,7 @@ export function SiteHeader({
       {isHome && (
         <div className={styles.hero}>
           <h1 className={styles.wordmark}>greendal</h1>
-          <Squiggle width={300} />
+          <Squiggle width={300} hero />
           {tagline && <p className={styles.tagline}>{tagline}</p>}
         </div>
       )}

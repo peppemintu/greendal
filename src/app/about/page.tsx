@@ -19,7 +19,7 @@ export default async function AboutPage() {
         <h1 style={{ margin: '12px 0 0', fontSize: 'clamp(32px, 6vw, 46px)', lineHeight: 1.15 }}>
           {settings.aboutTitle || 'who is doing all this'}
         </h1>
-        <Squiggle width={180} color="var(--rust)" />
+        <Squiggle width={180} color="var(--rust)" seed="about" />
         <div
           className="prose"
           style={{ marginTop: 26 }}
