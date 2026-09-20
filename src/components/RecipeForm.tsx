@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import { saveRecipe, deleteRecipe } from '@/app/admin/actions';
+import { saveRecipe, archiveRecipe } from '@/app/admin/actions';
 import { slugify } from '@/lib/format';
 import type { Ingredient, Step } from '@/lib/schema';
 import styles from '@/app/admin/admin.module.css';
@@ -34,6 +34,7 @@ export function RecipeForm({ draft }: { draft: RecipeDraft }) {
   const [slugTouched, setSlugTouched] = useState(Boolean(draft.slug));
   const [hero, setHero] = useState(draft.heroImage);
   const [uploadError, setUploadError] = useState('');
+  const [uploadOriginal, setUploadOriginal] = useState(false);
   const [ingredients, setIngredients] = useState<Ingredient[]>(
     draft.ingredients.length ? draft.ingredients : [EMPTY_INGREDIENT],
   );
@@ -45,6 +46,7 @@ export function RecipeForm({ draft }: { draft: RecipeDraft }) {
     setUploadError('');
     const body = new FormData();
     body.append('file', file);
+    if (uploadOriginal) body.append('original', 'true');
     const res = await fetch('/api/upload', { method: 'POST', body });
     const data = await res.json();
     if (!res.ok) {
@@ -125,6 +127,14 @@ export function RecipeForm({ draft }: { draft: RecipeDraft }) {
             Remove photo
           </button>
         )}
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, fontSize: 13.5, color: 'var(--ink-quiet)' }}>
+          <input
+            type="checkbox"
+            checked={uploadOriginal}
+            onChange={(e) => setUploadOriginal(e.target.checked)}
+          />
+          upload original (full size, less compression)
+        </label>
         {uploadError && <p className={styles.hint} style={{ color: 'var(--rust)' }}>{uploadError}</p>}
       </div>
 
@@ -288,13 +298,13 @@ export function RecipeForm({ draft }: { draft: RecipeDraft }) {
           <button
             className={styles.buttonSmall}
             type="submit"
-            formAction={deleteRecipe}
+            formAction={archiveRecipe}
             formNoValidate
             onClick={(e) => {
-              if (!confirm('Delete this recipe for good?')) e.preventDefault();
+              if (!confirm(`Archive "${draft.title || 'this recipe'}"? It disappears from the site but stays in the archive.`)) e.preventDefault();
             }}
           >
-            Delete
+            Archive
           </button>
         )}
       </div>

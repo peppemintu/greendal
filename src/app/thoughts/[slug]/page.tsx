@@ -1,16 +1,17 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { inArray } from 'drizzle-orm';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import { Squiggle } from '@/components/Squiggle';
 import { CommentSection } from '@/components/CommentSection';
-import { getPost, getNeighbours, getRecipe, getSettings } from '@/lib/queries';
-import { renderMarkdown } from '@/lib/markdown';
+import { BlockRenderer } from '@/components/BlockRenderer';
+import { getPost, getNeighbours, getSettings } from '@/lib/queries';
+import { blocksToPlainText } from '@/lib/blocks';
 import { longDate, readingTime } from '@/lib/format';
 import { db } from '@/lib/db';
-import { recipes as recipesTable } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
+import { recipes, type Block } from '@/lib/schema';
 import { getCurrentUser } from '@/lib/auth';
 import { getCommentThread } from '@/lib/comments';
 
@@ -35,6 +36,8 @@ export default async function ThoughtPage({ params }: { params: Promise<{ slug: 
   const post = await getPost(slug);
   if (!post || post.status !== 'published') notFound();
 
+  const blocks = JSON.parse(post.blocks) as Block[];
+
   const [{ prev, next }, settings, currentUser] = await Promise.all([
     getNeighbours(post.publishedAt),
     getSettings(),
@@ -43,15 +46,15 @@ export default async function ThoughtPage({ params }: { params: Promise<{ slug: 
   const viewer = currentUser && { id: currentUser.id, role: currentUser.role };
   const thread = await getCommentThread({ postId: post.id }, viewer);
 
-  let psRecipe: { slug: string; title: string } | null = null;
-  if (post.psRecipeId) {
-    const [row] = await db
-      .select({ slug: recipesTable.slug, title: recipesTable.title })
-      .from(recipesTable)
-      .where(eq(recipesTable.id, post.psRecipeId))
-      .limit(1);
-    psRecipe = row ?? null;
-  }
+  const recipeIds = [
+    ...new Set(
+      blocks.filter((b): b is Extract<Block, { type: 'ps' }> => b.type === 'ps' && b.recipeId != null).map((b) => b.recipeId!),
+    ),
+  ];
+  const recipeRows = recipeIds.length
+    ? await db.select({ id: recipes.id, slug: recipes.slug, title: recipes.title }).from(recipes).where(inArray(recipes.id, recipeIds))
+    : [];
+  const recipeLinks = new Map(recipeRows.map((r) => [r.id, { slug: r.slug, title: r.title }]));
 
   return (
     <>
@@ -69,7 +72,7 @@ export default async function ThoughtPage({ params }: { params: Promise<{ slug: 
             color: 'var(--moss)',
           }}
         >
-          {longDate(post.publishedAt)} · {readingTime(post.body)} min
+          {longDate(post.publishedAt)} · {readingTime(blocksToPlainText(blocks))} min
         </div>
         <h1
           style={{
@@ -83,34 +86,9 @@ export default async function ThoughtPage({ params }: { params: Promise<{ slug: 
         </h1>
         <Squiggle width={180} color="var(--rust)" />
 
-        <div
-          className="prose"
-          style={{ marginTop: 26 }}
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(post.body) }}
-        />
-
-        {psRecipe && (
-          <aside
-            style={{
-              margin: '36px 0 0',
-              padding: '22px 26px',
-              background: 'var(--paper-deep)',
-              border: '1px solid var(--rule-soft)',
-              display: 'flex',
-              gap: 18,
-              alignItems: 'center',
-              flexWrap: 'wrap',
-            }}
-          >
-            <span className="hand" style={{ fontSize: 34 }}>
-              ps
-            </span>
-            <span style={{ flex: 1, minWidth: 200, fontSize: 16, lineHeight: 1.55, color: '#28382e' }}>
-              {post.psText}{' '}
-              <Link href={`/recipes/${psRecipe.slug}`}>the recipe&rsquo;s here</Link>.
-            </span>
-          </aside>
-        )}
+        <div style={{ marginTop: 26 }}>
+          <BlockRenderer blocks={blocks} recipeLinks={recipeLinks} />
+        </div>
 
         <nav
           style={{
