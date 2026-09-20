@@ -1,22 +1,22 @@
 import { sqliteTable, text, integer, index, check, type AnySQLiteColumn } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
-/** A "thought" — a normal blog post, body written in markdown. */
+/** A "thought" — a normal blog post, built from Block[] (see the Block type below). */
 export const posts = sqliteTable('posts', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   slug: text('slug').notNull().unique(),
   title: text('title').notNull(),
   /** One-line teaser shown on the home page and index. */
   dek: text('dek'),
-  body: text('body').notNull().default(''),
+  /** JSON: Block[] */
+  blocks: text('blocks').notNull().default('[]'),
   status: text('status', { enum: ['draft', 'published'] })
     .notNull()
     .default('draft'),
   /** Unix seconds. Drives ordering and the displayed date. */
   publishedAt: integer('published_at'),
-  /** Optional "ps —" box at the foot of the post, pointing at a recipe. */
-  psRecipeId: integer('ps_recipe_id'),
-  psText: text('ps_text'),
+  /** Set when archived from the admin — hidden everywhere public, but the row (and its comments) stay. */
+  archivedAt: integer('archived_at'),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),
 });
@@ -49,6 +49,8 @@ export const recipes = sqliteTable('recipes', {
     .notNull()
     .default('draft'),
   publishedAt: integer('published_at'),
+  /** Set when archived from the admin — hidden everywhere public, but the row (and its comments) stay. */
+  archivedAt: integer('archived_at'),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),
 });
@@ -187,3 +189,22 @@ export type Step = {
   lead: string;
   text: string;
 };
+
+/**
+ * A post's content, block by block. `id` is a short random string, stable
+ * across saves — used as the React key and as the drag-and-drop identity,
+ * so it must survive edits to the block's own content.
+ */
+export type Block =
+  | { id: string; type: 'text'; markdown: string }
+  | { id: string; type: 'heading'; text: string; level: 2 | 3 }
+  | {
+      id: string;
+      type: 'image';
+      url: string;
+      alt: string;
+      caption?: string;
+      width?: 'column' | 'wide' | 'full';
+    }
+  | { id: string; type: 'divider'; style?: 'rule' | 'squiggle' | 'dots' }
+  | { id: string; type: 'ps'; text: string; recipeId?: number | null };

@@ -1,10 +1,10 @@
 import 'server-only';
 import { db } from './db';
 import { posts, recipes, settings } from './schema';
-import { and, desc, eq, isNotNull, lt, gt, asc } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, isNull, lt, gt, asc } from 'drizzle-orm';
 
 const published = (t: typeof posts | typeof recipes) =>
-  and(eq(t.status, 'published'), isNotNull(t.publishedAt));
+  and(eq(t.status, 'published'), isNotNull(t.publishedAt), isNull(t.archivedAt));
 
 export async function listPosts(limit?: number) {
   const q = db.select().from(posts).where(published(posts)).orderBy(desc(posts.publishedAt));
@@ -22,12 +22,12 @@ export async function countPosts() {
 }
 
 export async function getPost(slug: string) {
-  const [row] = await db.select().from(posts).where(eq(posts.slug, slug)).limit(1);
+  const [row] = await db.select().from(posts).where(and(eq(posts.slug, slug), isNull(posts.archivedAt))).limit(1);
   return row ?? null;
 }
 
 export async function getRecipe(slug: string) {
-  const [row] = await db.select().from(recipes).where(eq(recipes.slug, slug)).limit(1);
+  const [row] = await db.select().from(recipes).where(and(eq(recipes.slug, slug), isNull(recipes.archivedAt))).limit(1);
   return row ?? null;
 }
 

@@ -14,7 +14,7 @@ are no markdown files to commit.
 | UI primitives | Radix Primitives (Dialog, ToggleGroup) | Unstyled, so they don't fight the design. Radix *Themes* is deliberately not used |
 | Styling | CSS Modules + custom properties | The design is bespoke; a utility framework would be noise |
 | Auth | DB-backed sessions, `scrypt` passwords | One admin, any number of readers. See [Accounts & email](#accounts--email) |
-| Editor | Markdown for thoughts, a structured form for recipes | Recipe quantities have to stay numeric for the scaler |
+| Editor | A block editor for thoughts, a structured form for recipes | Recipe quantities have to stay numeric for the scaler; posts are freer-form, so they're built from typed blocks instead |
 
 ## Running it
 
@@ -150,6 +150,58 @@ A few things worth knowing if you're extending this:
   hide/unhide, delete). **`/admin/readers`** lists registered readers with block/unblock and
   restoring a closed account.
 
+## Post editor
+
+A thought's content lives in `posts.blocks` — a JSON array of typed blocks, the same pattern
+recipes already use for `ingredients`/`steps`. The type (`src/lib/schema.ts`):
+
+```ts
+type Block =
+  | { id: string; type: 'text';    markdown: string }
+  | { id: string; type: 'heading'; text: string; level: 2 | 3 }
+  | { id: string; type: 'image';   url: string; alt: string; caption?: string;
+                                    width?: 'column' | 'wide' | 'full' }
+  | { id: string; type: 'divider'; style?: 'rule' | 'squiggle' | 'dots' }
+  | { id: string; type: 'ps';      text: string; recipeId?: number | null };
+```
+
+`src/components/PostEditor.tsx` edits that array in place at `/admin/thoughts/[id]`, styled to
+look like the real page rather than a form; `src/components/BlockRenderer.tsx` renders the same
+blocks read-only, shared between the public post page, the editor's preview toggle, and (via
+`src/lib/blocks.ts`) the RSS feed. A few things worth knowing:
+
+- **Blocks reorder by drag (`@dnd-kit/core`) or the ↑/↓ buttons in each block's `⋯` menu** — the
+  buttons are the fallback for touch/keyboard, not an afterthought, so don't remove them if you
+  touch the drag code.
+- **`Cmd/Ctrl+Enter`** adds a new text block below the current one and focuses it;
+  **`Backspace`** at the start of an empty block deletes it and lands the cursor at the end of the
+  previous one; **`Cmd/Ctrl+S`** saves. All three are wired through `data-block-id` attributes and
+  a `focusRequest` effect in `PostEditor.tsx` — if you add a block type with its own text field,
+  give its input/textarea a `data-block-id` and route its `onKeyDown` through the same handler or
+  the shortcuts silently won't reach it.
+- **The very first block of a brand-new post gets its id from `useId()`, not `Math.random()`.**
+  That state is part of the initial render, which runs once on the server and once again during
+  client hydration — two calls to `Math.random()` would produce two different ids for the same
+  DOM node, and every later id-based lookup (drag-and-drop, the keyboard shortcuts above) would
+  silently miss. Every block created after mount (inserted, duplicated) is client-only and can use
+  the plain `randomId()` helper safely.
+- **Autosaves to the server every ~20s** if anything changed, via a separate `autosavePost` action
+  that returns instead of redirecting (unlike the explicit `savePost` action, which redirects to
+  the list on success — that would throw you out of the editor mid-autosave). The first autosave of
+  a new post creates its row and the client adopts the new id, so later autosaves become updates.
+  A debounced copy also goes to `localStorage`; if a tab dies before its next autosave, reopening
+  the same editor offers a "restore?" banner. Both are cleared once the server actually has the
+  latest content.
+- **Image uploads go through `/api/upload`** (admin-only), which now runs everything but animated
+  GIFs through `sharp`: resized to 1600px on the long side and recoded to webp at quality 82 by
+  default, or full resolution at quality 95 with the "upload original" checkbox. EXIF is stripped
+  in both modes — a phone photo's GPS coordinates have no business on a public site — after an
+  auto-rotate so orientation survives the strip.
+- **Posts and recipes archive, they don't delete.** `archivedAt` on both tables; every public query
+  filters it out, `/admin/thoughts` and `/admin/recipes` show an `archive` filter tab with a
+  `restore` button, and the confirmation dialog says what actually happens ("disappears from the
+  site but stays in the archive") rather than implying data loss.
+
 ## Putting it behind a Cloudflare Tunnel
 
 This avoids opening any port on the router — cloudflared makes an outbound connection to
@@ -272,8 +324,9 @@ src/app/                  routes — public pages, /admin, /api/upload, /feed.xm
 src/app/(auth)/           /login /register /forgot /reset /verify — shared by admin and readers
 src/app/admin/actions.ts  every write to posts/recipes/settings goes through here
 src/app/account/          the signed-in reader's (or admin's) own settings
-src/components/           SiteHeader, RecipeDetail (the scaler), the two editors
+src/components/           SiteHeader, RecipeDetail (the scaler), PostEditor, BlockRenderer
 src/lib/schema.ts         the data model — read this first
+src/lib/blocks.ts         Block[] -> plain text / HTML, shared by feed.xml and readingTime()
 src/lib/auth.ts           sessions, password hashing, getCurrentUser()/requireAdmin()
 src/lib/email.ts          sendEmail() — console/Resend, picked by EMAIL_PROVIDER
 src/lib/comments.ts       visibility rules and the threaded query — read before touching either
@@ -292,8 +345,6 @@ docs/design/               design docs for work in progress
   use is $5 to her. The licence sits next to the file in `public/fonts/`. Be aware the
   face has a drop shadow baked into its outlines, so it prints as two offset copies —
   that is the typeface, not a CSS bug.
-- **Markdown is not sanitised.** The only author is you, so raw HTML in a post body is
-  allowed on purpose. If a second writer ever gets an account, sanitise
-  `renderMarkdown` first.
-- **Uploads aren't resized.** An 8 MB cap, and that's it. Add `sharp` if you start
-  dropping phone photos straight in.
+- **Markdown is not sanitised.** The only author is you, so raw HTML from a `text` block's
+  markdown is allowed on purpose (see [Post editor](#post-editor)). If a second writer ever gets
+  an account, sanitise `renderMarkdown` first.

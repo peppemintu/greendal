@@ -4,6 +4,8 @@ import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import { listPosts, getSettings } from '@/lib/queries';
 import { shortDate, readingTime } from '@/lib/format';
+import { blocksToPlainText } from '@/lib/blocks';
+import type { Block } from '@/lib/schema';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'thoughts' };
@@ -27,7 +29,7 @@ export default async function ThoughtsIndex() {
               style={{ padding: '22px 0', borderTop: '1px solid var(--rule)' }}
             >
               <div style={{ fontSize: 11.5, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--moss)' }}>
-                {shortDate(post.publishedAt)} · {readingTime(post.body)} min
+                {shortDate(post.publishedAt)} · {readingTime(blocksToPlainText(JSON.parse(post.blocks) as Block[]))} min
               </div>
               <Link
                 href={`/thoughts/${post.slug}`}

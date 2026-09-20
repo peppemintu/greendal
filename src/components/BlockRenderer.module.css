@@ -1,0 +1,89 @@
+.block {
+  margin: 0 0 22px;
+}
+
+.figure {
+  margin: 28px 0;
+}
+
+.figure img {
+  width: 100%;
+  display: block;
+  border-radius: var(--radius);
+}
+
+.caption {
+  margin: 8px 0 0;
+  font-size: 13.5px;
+  color: var(--ink-quiet);
+  text-align: center;
+}
+
+/* Breaks out of the narrow prose column, centered on the viewport
+   regardless of how the parent is actually constrained. */
+.wide {
+  width: 100vw;
+  max-width: 900px;
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+
+.full {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+.full img {
+  border-radius: 0;
+}
+
+.dividerRule {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 34px 0;
+}
+
+.dividerSquiggle {
+  display: flex;
+  justify-content: center;
+  margin: 34px 0;
+}
+
+.dividerDots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 34px 0;
+}
+
+.dividerDots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--sage-dim);
+}
+
+.psBox {
+  margin: 36px 0;
+  padding: 22px 26px;
+  background: var(--paper-deep);
+  border: 1px solid var(--rule-soft);
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.psLabel {
+  font-size: 34px;
+  line-height: 1;
+}
+
+.psText {
+  flex: 1;
+  min-width: 200px;
+  font-size: 16px;
+  line-height: 1.55;
+  color: #28382e;
+}
