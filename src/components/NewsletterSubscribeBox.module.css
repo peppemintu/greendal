@@ -1,0 +1,138 @@
+.wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.input {
+  width: 150px;
+  font-family: var(--serif);
+  font-size: 12.5px;
+  color: var(--mint);
+  background: rgba(243, 248, 242, 0.08);
+  border: 1px solid rgba(243, 248, 242, 0.22);
+  border-radius: 3px;
+  padding: 5px 8px;
+}
+
+.input::placeholder {
+  color: var(--sage-dim);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--mint);
+}
+
+.button {
+  font-family: var(--serif);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--forest);
+  background: var(--mint);
+  border: 0;
+  border-radius: 3px;
+  padding: 6px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.button:hover {
+  background: var(--sage);
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.toggleButton {
+  composes: button;
+}
+
+.toggleButtonActive {
+  composes: button;
+  background: transparent;
+  color: var(--mint);
+  border: 1px solid rgba(243, 248, 242, 0.3);
+}
+
+.toggleButtonActive:hover {
+  background: rgba(243, 248, 242, 0.08);
+}
+
+.message {
+  font-size: 12.5px;
+  color: var(--sage);
+}
+
+.error {
+  font-size: 12.5px;
+  color: #e39a7a;
+}
+
+.tooltipWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltipTrigger {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10.5px;
+  line-height: 1;
+  border-radius: 50%;
+  border: 1px solid rgba(243, 248, 242, 0.35);
+  background: none;
+  color: var(--sage-dim);
+  cursor: help;
+  padding: 0;
+}
+
+.tooltipTrigger:hover,
+.tooltipTrigger:focus-visible {
+  color: var(--mint);
+  border-color: var(--mint);
+}
+
+.tooltipBubble {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 220px;
+  font-family: var(--serif);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--linen-on-dark);
+  background: var(--evergreen);
+  border: 1px solid rgba(243, 248, 242, 0.18);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s;
+  pointer-events: none;
+}
+
+.tooltipTrigger:hover + .tooltipBubble,
+.tooltipTrigger:focus-visible + .tooltipBubble {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (max-width: 700px) {
+  .input {
+    width: 110px;
+  }
+}

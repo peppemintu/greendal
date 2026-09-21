@@ -117,6 +117,63 @@ export const authTokens = sqliteTable('auth_tokens', {
   createdAt: integer('created_at').notNull(),
 });
 
+/**
+ * Weekly letter subscribers — a separate list from `users`, since reading
+ * the blog and getting a weekly email are different commitments and most
+ * subscribers will never register. `userId` links a subscription back to a
+ * reader account when it was opted into from one (skips the confirm-email
+ * step below, since that address is already verified); it's null for a
+ * guest who only ever typed an email into the subscribe box.
+ */
+export const subscribers = sqliteTable('subscribers', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  /** Lowercased, trimmed. The address mail actually goes to. */
+  email: text('email').notNull().unique(),
+  userId: integer('user_id').references(() => users.id),
+  /** 'pending' only applies to the guest/email-box path — a reader toggling
+   *  on goes straight to 'active', since their account email is already
+   *  confirmed. */
+  status: text('status', { enum: ['pending', 'active', 'unsubscribed'] })
+    .notNull()
+    .default('pending'),
+  /** SHA-256 of the confirm-subscription token, null once confirmed. Not
+   *  single-use — see confirmSubscription() for why (same reasoning as
+   *  verify_email above: a mail scanner's link-prefetch shouldn't burn it
+   *  before the person clicks). */
+  confirmTokenHash: text('confirm_token_hash'),
+  /**
+   * The standing unsubscribe link's token, stored as-is — not hashed like
+   * the auth tokens above. Those guard a sensitive action (proving control
+   * of an account) with a token minted once and never needed again, so
+   * hashing costs nothing. This one has to go out unchanged in every future
+   * issue, which means either storing it in the clear or storing the hash
+   * and losing the ability to reconstruct it — and unsubscribing is a
+   * low-stakes, fully reversible action even if the link leaked, so there's
+   * no real security given up by keeping it plain.
+   */
+  unsubscribeToken: text('unsubscribe_token').notNull().unique(),
+  createdAt: integer('created_at').notNull(),
+  confirmedAt: integer('confirmed_at'),
+  unsubscribedAt: integer('unsubscribed_at'),
+});
+
+/**
+ * A record of each weekly letter actually sent — exists so the cron hitting
+ * /api/newsletter/send twice in the same week (a retry, a misfire) is a
+ * no-op rather than a duplicate mailing. One row per week that had posts to
+ * recap; a quiet week with nothing published never gets a row and is simply
+ * skipped, not recorded as "sent".
+ */
+export const newsletterSends = sqliteTable('newsletter_sends', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  /** Unix seconds, Monday 00:00 UTC of the covered week. Unique — this is the idempotency key. */
+  weekStart: integer('week_start').notNull().unique(),
+  weekEnd: integer('week_end').notNull(),
+  sentAt: integer('sent_at').notNull(),
+  postCount: integer('post_count').notNull(),
+  recipientCount: integer('recipient_count').notNull(),
+});
+
 /** Fixed-window counters for login attempts, registrations, comment posts, etc. */
 export const rateLimits = sqliteTable('rate_limits', {
   /** e.g. "login:203.0.113.4" — caller decides the shape. */
@@ -173,6 +230,7 @@ export type RecipeRow = typeof recipes.$inferSelect;
 export type UserRow = typeof users.$inferSelect;
 export type SessionRow = typeof sessions.$inferSelect;
 export type CommentRow = typeof comments.$inferSelect;
+export type SubscriberRow = typeof subscribers.$inferSelect;
 
 export type Ingredient = {
   /** null means "no number" — e.g. "flaky salt, to taste". */

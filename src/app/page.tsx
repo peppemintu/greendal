@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
+import { NewsletterSubscribeBox } from '@/components/NewsletterSubscribeBox';
 import { listPosts, listRecipes, countPosts, getSettings } from '@/lib/queries';
 import { shortDate, duration } from '@/lib/format';
 import styles from './home.module.css';
@@ -17,7 +18,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <SiteHeader variant="home" tagline={settings.tagline} />
+      <SiteHeader variant="home" tagline={settings.tagline} subscribeSlot={<NewsletterSubscribeBox />} />
 
       <main className="shell">
         <div className={styles.split}>
