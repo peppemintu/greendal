@@ -196,7 +196,11 @@ blocks read-only, shared between the public post page, the editor's preview togg
   GIFs through `sharp`: resized to 1600px on the long side and recoded to webp at quality 82 by
   default, or full resolution at quality 95 with the "upload original" checkbox. EXIF is stripped
   in both modes — a phone photo's GPS coordinates have no business on a public site — after an
-  auto-rotate so orientation survives the strip.
+  auto-rotate so orientation survives the strip. Files still land on disk under `public/uploads/`,
+  but they're **served through `src/app/uploads/[filename]/route.ts`**, not Next's static
+  handling for `public/` — `next start` indexes that folder once at boot and doesn't notice files
+  written there afterward, so an upload against an already-running server would silently 404 until
+  the next restart. The route handler re-reads the filesystem on every request instead.
 - **Posts and recipes archive, they don't delete.** `archivedAt` on both tables; every public query
   filters it out, `/admin/thoughts` and `/admin/recipes` show an `archive` filter tab with a
   `restore` button, and the confirmation dialog says what actually happens ("disappears from the
