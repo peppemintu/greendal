@@ -19,37 +19,70 @@ function siteUrl(): string {
 
 const WEEK_SECONDS = 7 * 24 * 60 * 60;
 
+/** getUTCDay() convention: 0 = Sunday ... 6 = Saturday. `hour` is 0-23, UTC. */
+export type SendSchedule = { day: number; hour: number };
+
+/** Monday 00:00 UTC — what this always was before the schedule became configurable. */
+const DEFAULT_SCHEDULE: SendSchedule = { day: 1, hour: 0 };
+
+function clampInt(raw: string | undefined, min: number, max: number, fallback: number): number {
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= min && n <= max ? n : fallback;
+}
+
 /**
- * Monday 00:00 UTC on or before `reference`. UTC throughout, deliberately:
- * the blog has no per-post or per-subscriber timezone anywhere else, so
- * picking one here would be arbitrary. Pick the crontab's fire time with
- * that in mind.
+ * Reads the admin-configured send day/hour from settings, falling back to
+ * Monday 00:00 UTC if unset or invalid. UTC throughout, deliberately: the
+ * blog has no per-post or per-subscriber timezone anywhere else, so picking
+ * one here would be arbitrary — the admin picks a UTC hour directly instead.
  */
-function mondayOnOrBefore(reference: Date): number {
-  const d = new Date(Date.UTC(reference.getUTCFullYear(), reference.getUTCMonth(), reference.getUTCDate()));
-  const daysSinceMonday = (d.getUTCDay() + 6) % 7; // Mon=0 ... Sun=6
-  d.setUTCDate(d.getUTCDate() - daysSinceMonday);
+export async function getSendSchedule(): Promise<SendSchedule> {
+  const siteSettings = await getSettings();
+  return {
+    day: clampInt(siteSettings.newsletterSendDay, 0, 6, DEFAULT_SCHEDULE.day),
+    hour: clampInt(siteSettings.newsletterSendHour, 0, 23, DEFAULT_SCHEDULE.hour),
+  };
+}
+
+/** The most recent `schedule.day` at `schedule.hour` UTC on or before `reference`. */
+function anchorOnOrBefore(reference: Date, schedule: SendSchedule): number {
+  const d = new Date(
+    Date.UTC(reference.getUTCFullYear(), reference.getUTCMonth(), reference.getUTCDate(), schedule.hour),
+  );
+  const daysSince = (d.getUTCDay() - schedule.day + 7) % 7;
+  d.setUTCDate(d.getUTCDate() - daysSince);
+  // Same weekday, but `schedule.hour` hasn't happened yet today relative to
+  // `reference` — the real anchor is a week further back.
+  if (d.getTime() > reference.getTime()) d.setUTCDate(d.getUTCDate() - 7);
   return Math.floor(d.getTime() / 1000);
 }
 
 /**
- * The most recently completed Mon-Sun week as seen from `reference` — what
- * a cron firing each Monday morning should recap. This is the window the
- * actual send uses.
+ * The most recently completed week as seen from `reference` — what the
+ * scheduled check recaps once it fires. This is the window the actual send
+ * uses.
  */
-export function computeLastWeekBounds(reference: Date = new Date()): { weekStart: number; weekEnd: number } {
-  const weekEnd = mondayOnOrBefore(reference);
+export async function computeLastWeekBounds(reference: Date = new Date()): Promise<{ weekStart: number; weekEnd: number }> {
+  const schedule = await getSendSchedule();
+  const weekEnd = anchorOnOrBefore(reference, schedule);
   return { weekStart: weekEnd - WEEK_SECONDS, weekEnd };
 }
 
 /**
  * The week `reference` currently sits in, still in progress — what the
  * admin preview shows, since "this week, right now" should mean today, not
- * whatever the last completed send already covered.
+ * whatever the last completed send already covered. `weekEnd` also doubles
+ * as "when does the next letter go out" — see nextSendAt().
  */
-export function computeCurrentWeekBounds(reference: Date = new Date()): { weekStart: number; weekEnd: number } {
-  const weekStart = mondayOnOrBefore(reference);
+export async function computeCurrentWeekBounds(reference: Date = new Date()): Promise<{ weekStart: number; weekEnd: number }> {
+  const schedule = await getSendSchedule();
+  const weekStart = anchorOnOrBefore(reference, schedule);
   return { weekStart, weekEnd: weekStart + WEEK_SECONDS };
+}
+
+/** When the next letter is due, per the configured schedule. For the admin page. */
+export async function nextSendAt(reference: Date = new Date()): Promise<number> {
+  return (await computeCurrentWeekBounds(reference)).weekEnd;
 }
 
 type WeekPost = { title: string; dek: string | null; slug: string; publishedAt: number | null };
@@ -106,12 +139,12 @@ export type IssuePreview = {
 
 /**
  * Builds what's accumulated so far in the current, still-in-progress week —
- * the admin preview of what would go out this coming Monday if writing
- * stopped right now. Doesn't send or record anything. Returns null when
- * there's nothing to recap yet.
+ * the admin preview of what would go out at the next scheduled send if
+ * writing stopped right now. Doesn't send or record anything. Returns null
+ * when there's nothing to recap yet.
  */
 export async function previewWeeklyIssue(reference: Date = new Date()): Promise<IssuePreview | null> {
-  const { weekStart, weekEnd } = computeCurrentWeekBounds(reference);
+  const { weekStart, weekEnd } = await computeCurrentWeekBounds(reference);
   const weekPosts = await postsForWeek(weekStart, weekEnd);
   if (weekPosts.length === 0) return null;
 
@@ -135,12 +168,13 @@ export type SendResult =
   | { sent: false; reason: 'already-sent' | 'no-posts' };
 
 /**
- * The actual weekly send, called from the cron-protected route. Idempotent
- * per week via newsletter_sends' unique weekStart — safe to call more than
- * once for the same week (a retry, a misfire) without double-mailing.
+ * The actual weekly send, called from the hourly scheduled check (and the
+ * manual endpoint). Idempotent per week via newsletter_sends' unique
+ * weekStart — safe to call more than once for the same week (a retry, a
+ * misfire) without double-mailing.
  */
 export async function sendWeeklyIssueIfDue(reference: Date = new Date()): Promise<SendResult> {
-  const { weekStart, weekEnd } = computeLastWeekBounds(reference);
+  const { weekStart, weekEnd } = await computeLastWeekBounds(reference);
 
   const [already] = await db
     .select({ id: newsletterSends.id })

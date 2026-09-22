@@ -2,19 +2,21 @@ import { db } from '@/lib/db';
 import { subscribers, newsletterSends } from '@/lib/schema';
 import { desc } from 'drizzle-orm';
 import { getSettings } from '@/lib/queries';
-import { previewWeeklyIssue } from '@/lib/newsletter';
-import { longDate } from '@/lib/format';
+import { previewWeeklyIssue, getSendSchedule, nextSendAt } from '@/lib/newsletter';
+import { longDate, longDateTime } from '@/lib/format';
 import { NewsletterSettingsForm } from '@/components/NewsletterSettingsForm';
 import styles from '../../admin.module.css';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminNewsletterPage() {
-  const [siteSettings, allSubscribers, recentSends, preview] = await Promise.all([
+  const [siteSettings, allSubscribers, recentSends, preview, schedule, nextSend] = await Promise.all([
     getSettings(),
     db.select({ status: subscribers.status }).from(subscribers),
     db.select().from(newsletterSends).orderBy(desc(newsletterSends.weekStart)).limit(10),
     previewWeeklyIssue(),
+    getSendSchedule(),
+    nextSendAt(),
   ]);
 
   const counts = { active: 0, pending: 0, unsubscribed: 0 };
@@ -35,6 +37,9 @@ export default async function AdminNewsletterPage() {
       <NewsletterSettingsForm
         newsletterSubject={siteSettings.newsletterSubject ?? ''}
         newsletterIntro={siteSettings.newsletterIntro ?? ''}
+        sendDay={schedule.day}
+        sendHour={schedule.hour}
+        nextSendLabel={longDateTime(nextSend)}
       />
 
       <section style={{ marginTop: 42 }}>
@@ -65,7 +70,7 @@ export default async function AdminNewsletterPage() {
           </>
         ) : (
           <p style={{ color: 'var(--ink-quiet)', fontSize: 15 }}>
-            Nothing published yet this week — no letter would go out if the cron ran right now.
+            Nothing published yet this week — no letter would go out at the next scheduled send.
           </p>
         )}
       </section>

@@ -225,10 +225,16 @@ if you move this to a different machine. `src/lib/newsletter.ts` is where the re
 (week-bounds math, building the issue, the idempotent send) if you want to read it before touching
 any of this.
 
-**The subject line and the intro paragraph are yours to write**, at `/admin/newsletter` — same
-`settings` table tagline/footerNote/aboutBody already use. The list of that week's posts is always
-generated fresh underneath whatever you write there; that page also shows a live preview of what's
-accumulated so far this week, and a short history of what's actually gone out.
+**The subject line, the intro paragraph, and the send day/hour are yours to set**, at
+`/admin/newsletter` — the subject/intro share the same `settings` table tagline/footerNote/aboutBody
+already use; the send schedule is `newsletterSendDay`/`newsletterSendHour` there (0-6 Sun-Sat and
+0-23, both UTC — no per-subscriber timezone exists anywhere else in this project, so the admin picks
+a UTC hour directly rather than this guessing one). Defaults to Monday 00:00 UTC if never set. The
+list of that week's posts is always generated fresh underneath whatever you write there; that page
+also shows a live preview of what's accumulated so far this week, when the next letter actually
+goes out, and a short history of what's already gone out. Changing the schedule only changes where
+the week boundary falls going forward — it doesn't retroactively change what a week already sent
+covered.
 
 A week with nothing published in it is skipped silently — no "sorry, nothing happened" letter.
 

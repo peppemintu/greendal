@@ -11,6 +11,7 @@ export function slugify(input: string): string {
 }
 
 const MONTHS = ['jan','feb','mar','apr','may','jun','jul','aug','sept','oct','nov','dec'];
+const WEEKDAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
 /** "sept 2" — the short form used in listings. */
 export function shortDate(unix: number | null): string {
@@ -24,6 +25,15 @@ export function longDate(unix: number | null): string {
   if (!unix) return 'unpublished';
   const d = new Date(unix * 1000);
   return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+}
+
+/** "mon, sept 29, 2026 · 08:00 UTC" — the newsletter's next-send time. */
+export function longDateTime(unix: number | null): string {
+  if (!unix) return '—';
+  const d = new Date(unix * 1000);
+  const hh = String(d.getUTCHours()).padStart(2, '0');
+  const mm = String(d.getUTCMinutes()).padStart(2, '0');
+  return `${WEEKDAYS[d.getUTCDay()]}, ${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()} · ${hh}:${mm} UTC`;
 }
 
 /** "40 min", "2 hr 10 min", "2 days". */
