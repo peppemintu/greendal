@@ -281,6 +281,25 @@ export async function setReaderSubscription(userId: number, email: string, subsc
     .where(eq(subscribers.id, existing.id));
 }
 
+/**
+ * Called from an account email change — keeps an existing subscription
+ * pointed at the reader's new address instead of silently continuing to
+ * mail the one they just moved away from. Best-effort: if the new address
+ * already belongs to an unrelated subscriber row (someone else's guest
+ * signup, say), leave both rows alone rather than trying to merge them.
+ */
+export async function migrateSubscriberEmail(userId: number, newEmail: string): Promise<void> {
+  const [existing] = await db.select().from(subscribers).where(eq(subscribers.userId, userId)).limit(1);
+  if (!existing) return;
+
+  try {
+    await db.update(subscribers).set({ email: newEmail }).where(eq(subscribers.id, existing.id));
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    if (!message.includes('UNIQUE')) throw e;
+  }
+}
+
 export async function isReaderSubscribed(email: string): Promise<boolean> {
   const [row] = await db
     .select({ status: subscribers.status })
