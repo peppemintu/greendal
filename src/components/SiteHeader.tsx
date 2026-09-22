@@ -51,9 +51,11 @@ function AccountLinks({ sheet, onNavigate }: { sheet?: boolean; onNavigate?: () 
 export function SiteHeader({
   variant = 'compact',
   tagline,
+  subscribeSlot,
 }: {
   variant?: 'home' | 'compact';
   tagline?: string;
+  subscribeSlot?: React.ReactNode;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -63,7 +65,10 @@ export function SiteHeader({
     <header className={styles.dark}>
       <div className={`${styles.bar} ${isHome ? '' : styles.barPlain}`}>
         {isHome ? (
-          <span className={styles.eyebrow}>{new Date().getFullYear()} · a blog</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <span className={styles.eyebrow}>{new Date().getFullYear()} · a blog</span>
+            {subscribeSlot}
+          </div>
         ) : (
           <Link href="/" className={styles.wordmarkSmall}>
             greendal

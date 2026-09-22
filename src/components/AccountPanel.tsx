@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import { updateAccount, closeAccount } from '@/app/account/actions';
+import { updateAccount, closeAccount, changeEmail } from '@/app/account/actions';
 import { resendVerification } from '@/app/(auth)/actions';
 import styles from '@/styles/form.module.css';
 
@@ -15,6 +15,7 @@ export type AccountUser = {
 export function AccountPanel({ user }: { user: AccountUser }) {
   const [profileState, profileAction, profilePending] = useActionState(updateAccount, undefined);
   const [verifyState, verifyAction, verifyPending] = useActionState(resendVerification, undefined);
+  const [emailState, emailAction, emailPending] = useActionState(changeEmail, undefined);
 
   return (
     <>
@@ -33,15 +34,27 @@ export function AccountPanel({ user }: { user: AccountUser }) {
       {verifyState?.message && <div className={styles.message}>{verifyState.message}</div>}
       {verifyState?.error && <div className={styles.error}>{verifyState.error}</div>}
 
-      <form action={profileAction}>
-        {profileState?.error && <div className={styles.error}>{profileState.error}</div>}
-        {profileState?.message && <div className={styles.message}>{profileState.message}</div>}
+      <form action={emailAction}>
+        {emailState?.error && <div className={styles.error}>{emailState.error}</div>}
+        {emailState?.message && <div className={styles.message}>{emailState.message}</div>}
 
         <label className={styles.field}>
           <span className={styles.label}>email</span>
-          <input className={styles.input} value={user.email} disabled />
-          <p className={styles.hint}>Not shown to anyone. Changing it isn&rsquo;t supported yet.</p>
+          <input className={styles.input} name="email" type="email" defaultValue={user.email} required />
+          <p className={styles.hint}>
+            Not shown to anyone. Changing it drops your confirmed status — you&rsquo;ll get a new link
+            to click before you can comment (or subscribe) again.
+          </p>
         </label>
+
+        <button className={styles.buttonSmall} type="submit" disabled={emailPending}>
+          {emailPending ? 'Saving…' : 'Change email'}
+        </button>
+      </form>
+
+      <form action={profileAction} style={{ marginTop: 28 }}>
+        {profileState?.error && <div className={styles.error}>{profileState.error}</div>}
+        {profileState?.message && <div className={styles.message}>{profileState.message}</div>}
 
         <label className={styles.field}>
           <span className={styles.label}>your name</span>

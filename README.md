@@ -206,6 +206,47 @@ blocks read-only, shared between the public post page, the editor's preview togg
   `restore` button, and the confirmation dialog says what actually happens ("disappears from the
   site but stays in the archive") rather than implying data loss.
 
+## Weekly letter
+
+A subscribe box sits next to the "· a blog" line on the home page. A guest, or a reader who
+hasn't confirmed their email yet, gets a plain email field (double opt-in — confirming is a
+separate click from an emailed link, same pattern as registering). A reader whose email is
+already confirmed gets a subscribe/unsubscribe toggle instead, bound to their account — no second
+email round-trip, since that address is already proven.
+
+Once a week, everyone with an active subscription gets a plain-text letter recapping whatever
+posts went out that week. **The app schedules itself** — `src/instrumentation.ts` starts an hourly
+check when the server process boots (`next start`, in Docker, stays running — nothing serverless
+here to kill a timer between requests) and calls `sendWeeklyIssueIfDue()` each time. That's
+idempotent per calendar week (`newsletter_sends` tracks what's already gone out via a unique
+`weekStart`), so checking far more often than needed is harmless — the other 167 checks a week are
+two cheap `SELECT`s that no-op. No cron expression, no host-level scheduling, nothing to reconfigure
+if you move this to a different machine. `src/lib/newsletter.ts` is where the real logic lives
+(week-bounds math, building the issue, the idempotent send) if you want to read it before touching
+any of this.
+
+**The subject line, the intro paragraph, and the send day/hour are yours to set**, at
+`/admin/newsletter` — the subject/intro share the same `settings` table tagline/footerNote/aboutBody
+already use; the send schedule is `newsletterSendDay`/`newsletterSendHour` there (0-6 Sun-Sat and
+0-23, both UTC — no per-subscriber timezone exists anywhere else in this project, so the admin picks
+a UTC hour directly rather than this guessing one). Defaults to Monday 00:00 UTC if never set. The
+list of that week's posts is always generated fresh underneath whatever you write there; that page
+also shows a live preview of what's accumulated so far this week, when the next letter actually
+goes out, and a short history of what's already gone out. Changing the schedule only changes where
+the week boundary falls going forward — it doesn't retroactively change what a week already sent
+covered.
+
+A week with nothing published in it is skipped silently — no "sorry, nothing happened" letter.
+
+**`POST /api/newsletter/send`** still exists, guarded by `NEWSLETTER_CRON_SECRET` — it's not needed
+for the weekly send itself, but it's there as a manual trigger: force a send right now, or confirm
+the scheduled check is actually alive. It's just as idempotent as the automatic path, so calling it
+is always safe:
+
+```
+curl -X POST https://yourdomain.example/api/newsletter/send -H "Authorization: Bearer YOUR_SECRET"
+```
+
 ## Putting it behind a Cloudflare Tunnel
 
 This avoids opening any port on the router — cloudflared makes an outbound connection to
@@ -335,6 +376,10 @@ src/lib/auth.ts           sessions, password hashing, getCurrentUser()/requireAd
 src/lib/email.ts          sendEmail() — console/Resend, picked by EMAIL_PROVIDER
 src/lib/comments.ts       visibility rules and the threaded query — read before touching either
 src/lib/commentActions.ts create/edit/delete/hide/visibility mutations for comments
+src/lib/newsletter.ts     week-bounds math, building an issue, the idempotent weekly send
+src/lib/subscriberActions.ts subscribe/confirm/unsubscribe/toggle mutations for the letter
+src/instrumentation.ts    starts the hourly check that sends the weekly letter — see Weekly letter
+src/app/api/newsletter/send/  manual/debug POST trigger, not what actually sends it — see Weekly letter
 src/styles/globals.css    design tokens
 src/styles/form.module.css  shared field/button/error styles — admin editors and public forms alike
 scripts/seed.mjs          applies migrations, then sample content from the original mockup
