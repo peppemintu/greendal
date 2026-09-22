@@ -216,3 +216,30 @@ h3 {
     font-size: 17.5px;
   }
 }
+
+/*
+ * Past ~11" laptop width, a 1000px-wide column centered in the middle of a
+ * much wider viewport starts reading as a lost, shrinking island rather than
+ * a page — nothing marks where the content actually is. A framed "sheet"
+ * (border + shadow + a little breathing room from the header/footer) is the
+ * old-forum-and-blog fix: content stays a fixed, comfortable reading width,
+ * but it visibly IS a sheet sitting on the page, not a stray paragraph
+ * floating in a beige desert. Background stays the same paper texture —
+ * this is a frame, not a different surface.
+ *
+ * Deliberately NOT on .shell itself: .shell is often applied straight to
+ * <main>, which flex-grows to push the footer to the bottom of the
+ * viewport on short pages — a border on that stretched box would trace the
+ * full stretch, not the content, turning a short recipe into a mostly-empty
+ * framed rectangle on a tall monitor. .sheet goes on an inner wrapper sized
+ * to its own content instead, so the frame hugs what's actually there.
+ */
+@media (min-width: 1300px) {
+  .sheet {
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 4px rgba(13, 49, 32, 0.08);
+    margin-block: 32px;
+    padding: 32px 40px;
+  }
+}

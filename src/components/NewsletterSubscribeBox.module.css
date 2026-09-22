@@ -107,7 +107,9 @@
 .tooltipBubble {
   position: absolute;
   z-index: 20;
-  top: calc(100% + 8px);
+  /* Opens upward — this widget only lives in the site footer now, so
+     opening down would push it past the bottom of the page. */
+  bottom: calc(100% + 8px);
   right: 0;
   width: 220px;
   font-family: var(--serif);

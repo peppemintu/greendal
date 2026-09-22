@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 const BLANK: RecipeDraft = {
   slug: '', title: '', intro: '', heroImage: '',
-  handsOnMinutes: '', totalMinutes: '', baseServings: '2',
+  handsOnMinutes: '', handsOnApprox: false, totalMinutes: '', totalApprox: false, baseServings: '2',
   yieldLabel: '{n} as dinner', ingredients: [], steps: [],
   pullNote: '', headnote: '', status: 'draft', publishedAtLocal: '',
 };
@@ -30,7 +30,9 @@ export default async function EditRecipe({ params }: { params: Promise<{ id: str
         intro: row.intro ?? '',
         heroImage: row.heroImage ?? '',
         handsOnMinutes: row.handsOnMinutes ? String(row.handsOnMinutes) : '',
+        handsOnApprox: Boolean(row.handsOnApprox),
         totalMinutes: row.totalMinutes ? String(row.totalMinutes) : '',
+        totalApprox: Boolean(row.totalApprox),
         baseServings: String(row.baseServings),
         yieldLabel: row.yieldLabel,
         ingredients: JSON.parse(row.ingredients) as Ingredient[],

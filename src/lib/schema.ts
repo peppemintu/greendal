@@ -32,7 +32,10 @@ export const recipes = sqliteTable('recipes', {
   intro: text('intro'),
   heroImage: text('hero_image'),
   handsOnMinutes: integer('hands_on_minutes'),
+  /** Shows as "~40 min" instead of "40 min" — the time's an estimate, not a promise. */
+  handsOnApprox: integer('hands_on_approx').notNull().default(0),
   totalMinutes: integer('total_minutes'),
+  totalApprox: integer('total_approx').notNull().default(0),
   /** The servings the stored quantities are written for. */
   baseServings: integer('base_servings').notNull().default(2),
   /** Rendered as "{n} as dinner", "makes 1 loaf" etc. {n} is substituted. */
@@ -43,7 +46,7 @@ export const recipes = sqliteTable('recipes', {
   steps: text('steps').notNull().default('[]'),
   /** The handwritten aside inside the ingredients panel. */
   pullNote: text('pull_note'),
-  /** The "why this one" paragraph under the method. */
+  /** The "author's notes" paragraph under the method. */
   headnote: text('headnote'),
   status: text('status', { enum: ['draft', 'published'] })
     .notNull()
@@ -240,6 +243,8 @@ export type Ingredient = {
   name: string;
   /** Quantities that shouldn't multiply with servings (a pinch of salt). */
   fixed?: boolean;
+  /** Shows as "~2 cups" instead of "2 cups" — an estimate, not exact. */
+  approx?: boolean;
 };
 
 export type Step = {

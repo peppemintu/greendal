@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
+import { NewsletterSubscribeBox } from '@/components/NewsletterSubscribeBox';
 import { listPosts, getSettings } from '@/lib/queries';
 import { shortDate, readingTime } from '@/lib/format';
 import { blocksToPlainText } from '@/lib/blocks';
@@ -49,7 +50,7 @@ export default async function ThoughtsIndex() {
           )}
         </div>
       </main>
-      <SiteFooter note={settings.footerNote} />
+      <SiteFooter note={settings.footerNote} subscribeSlot={<NewsletterSubscribeBox />} />
     </>
   );
 }

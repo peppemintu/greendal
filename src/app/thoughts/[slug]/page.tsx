@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { inArray } from 'drizzle-orm';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
+import { NewsletterSubscribeBox } from '@/components/NewsletterSubscribeBox';
 import { Squiggle } from '@/components/Squiggle';
 import { CommentSection } from '@/components/CommentSection';
 import { BlockRenderer } from '@/components/BlockRenderer';
@@ -120,7 +121,7 @@ export default async function ThoughtPage({ params }: { params: Promise<{ slug: 
 
         <CommentSection target={{ postId: post.id }} nodes={thread.nodes} visibleCount={thread.visibleCount} />
       </main>
-      <SiteFooter note={settings.footerNote} />
+      <SiteFooter note={settings.footerNote} subscribeSlot={<NewsletterSubscribeBox />} />
     </>
   );
 }
