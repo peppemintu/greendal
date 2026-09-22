@@ -215,11 +215,15 @@ already confirmed gets a subscribe/unsubscribe toggle instead, bound to their ac
 email round-trip, since that address is already proven.
 
 Once a week, everyone with an active subscription gets a plain-text letter recapping whatever
-posts went out that week. **Nothing sends automatically from inside the app** — `POST
-/api/newsletter/send`, guarded by `NEWSLETTER_CRON_SECRET`, does the actual work, and something
-outside the app has to call it on a schedule. `src/lib/newsletter.ts` is where the real logic
-lives (week-bounds math, building the issue, the idempotent send) if you want to read it before
-touching any of this.
+posts went out that week. **The app schedules itself** — `src/instrumentation.ts` starts an hourly
+check when the server process boots (`next start`, in Docker, stays running — nothing serverless
+here to kill a timer between requests) and calls `sendWeeklyIssueIfDue()` each time. That's
+idempotent per calendar week (`newsletter_sends` tracks what's already gone out via a unique
+`weekStart`), so checking far more often than needed is harmless — the other 167 checks a week are
+two cheap `SELECT`s that no-op. No cron expression, no host-level scheduling, nothing to reconfigure
+if you move this to a different machine. `src/lib/newsletter.ts` is where the real logic lives
+(week-bounds math, building the issue, the idempotent send) if you want to read it before touching
+any of this.
 
 **The subject line and the intro paragraph are yours to write**, at `/admin/newsletter` — same
 `settings` table tagline/footerNote/aboutBody already use. The list of that week's posts is always
@@ -227,30 +231,15 @@ generated fresh underneath whatever you write there; that page also shows a live
 accumulated so far this week, and a short history of what's actually gone out.
 
 A week with nothing published in it is skipped silently — no "sorry, nothing happened" letter.
-Calling the endpoint more than once for the same week is a no-op the second time (`newsletter_sends`
-tracks what's already gone out), so a retried or duplicated schedule firing doesn't double-mail.
 
-**Scheduling it, on the Windows box this project actually runs on** (see the CI section below —
-the deploy/backup runner is Windows, so plain `crontab` isn't available without setting up WSL
-first). Generate a secret and put it in `.env` as `NEWSLETTER_CRON_SECRET`, then register a weekly
-task from PowerShell:
-
-```powershell
-schtasks /create /tn "greendal weekly letter" /sc weekly /d MON /st 08:00 `
-  /tr "curl.exe -X POST https://yourdomain.example/api/newsletter/send -H \"Authorization: Bearer YOUR_SECRET\""
-```
-
-`/st` is local time on that machine — the app itself computes week boundaries in UTC (no
-per-subscriber timezone exists anywhere else in this project), so as long as this fires sometime
-that reads as "Monday morning" to you, which week it recaps will match what you'd expect. On a
-Linux host instead, the equivalent is an ordinary crontab entry:
+**`POST /api/newsletter/send`** still exists, guarded by `NEWSLETTER_CRON_SECRET` — it's not needed
+for the weekly send itself, but it's there as a manual trigger: force a send right now, or confirm
+the scheduled check is actually alive. It's just as idempotent as the automatic path, so calling it
+is always safe:
 
 ```
-0 8 * * 1 curl -X POST https://yourdomain.example/api/newsletter/send -H "Authorization: Bearer YOUR_SECRET"
+curl -X POST https://yourdomain.example/api/newsletter/send -H "Authorization: Bearer YOUR_SECRET"
 ```
-
-To check it's wired up without waiting for Monday, run the same `curl` by hand — it's idempotent,
-so trying it early and having it actually fire once real Monday comes is harmless either way.
 
 ## Putting it behind a Cloudflare Tunnel
 
@@ -383,7 +372,8 @@ src/lib/comments.ts       visibility rules and the threaded query — read befor
 src/lib/commentActions.ts create/edit/delete/hide/visibility mutations for comments
 src/lib/newsletter.ts     week-bounds math, building an issue, the idempotent weekly send
 src/lib/subscriberActions.ts subscribe/confirm/unsubscribe/toggle mutations for the letter
-src/app/api/newsletter/send/  POST target for the external weekly schedule — see Weekly letter
+src/instrumentation.ts    starts the hourly check that sends the weekly letter — see Weekly letter
+src/app/api/newsletter/send/  manual/debug POST trigger, not what actually sends it — see Weekly letter
 src/styles/globals.css    design tokens
 src/styles/form.module.css  shared field/button/error styles — admin editors and public forms alike
 scripts/seed.mjs          applies migrations, then sample content from the original mockup

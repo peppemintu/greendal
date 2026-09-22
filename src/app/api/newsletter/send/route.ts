@@ -3,10 +3,12 @@ import { timingSafeEqual } from 'node:crypto';
 import { sendWeeklyIssueIfDue } from '@/lib/newsletter';
 
 /**
- * Fired by a crontab entry on the host (see README) — there's no scheduler
- * running inside the app itself. Idempotent per week (sendWeeklyIssueIfDue
- * checks newsletter_sends before doing anything), so an extra or repeated
- * cron fire is harmless, not a double-mailing.
+ * The app checks for itself, hourly, whether this week's letter is due (see
+ * instrumentation.ts) — this endpoint isn't needed for that. It's kept as a
+ * secret-protected manual trigger: force a send now, or confirm the
+ * scheduled check is actually running. Idempotent per week
+ * (sendWeeklyIssueIfDue checks newsletter_sends before doing anything), so
+ * calling it is always safe, whether or not the week's letter already went out.
  */
 export async function POST(request: Request) {
   const secret = process.env.NEWSLETTER_CRON_SECRET;
