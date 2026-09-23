@@ -1,8 +1,8 @@
 import 'server-only';
 import { randomBytes } from 'node:crypto';
-import { and, eq, gte, lt, isNull, asc } from 'drizzle-orm';
+import { and, eq, gte, lt, isNull } from 'drizzle-orm';
 import { db } from './db';
-import { posts, subscribers, newsletterSends } from './schema';
+import { posts, recipes, subscribers, newsletterSends } from './schema';
 import { sendEmail } from './email';
 import { getSettings } from './queries';
 import { hashToken } from './authTokens';
@@ -85,22 +85,38 @@ export async function nextSendAt(reference: Date = new Date()): Promise<number> 
   return (await computeCurrentWeekBounds(reference)).weekEnd;
 }
 
-type WeekPost = { title: string; dek: string | null; slug: string; publishedAt: number | null };
+type WeekPost = {
+  title: string;
+  dek: string | null;
+  slug: string;
+  publishedAt: number | null;
+  kind: 'post' | 'recipe';
+};
 
-/** Published, non-archived posts whose publishedAt falls in [weekStart, weekEnd). */
+/**
+ * Published, non-archived posts AND recipes whose publishedAt falls in
+ * [weekStart, weekEnd) — "what went out this week" means both content
+ * types, not just posts/thoughts (they live in separate tables).
+ */
 async function postsForWeek(weekStart: number, weekEnd: number): Promise<WeekPost[]> {
-  return db
-    .select({ title: posts.title, dek: posts.dek, slug: posts.slug, publishedAt: posts.publishedAt })
-    .from(posts)
-    .where(
-      and(
-        eq(posts.status, 'published'),
-        isNull(posts.archivedAt),
-        gte(posts.publishedAt, weekStart),
-        lt(posts.publishedAt, weekEnd),
-      ),
-    )
-    .orderBy(asc(posts.publishedAt));
+  const inWindow = (t: typeof posts | typeof recipes) =>
+    and(eq(t.status, 'published'), isNull(t.archivedAt), gte(t.publishedAt, weekStart), lt(t.publishedAt, weekEnd));
+
+  const [weekPosts, weekRecipes] = await Promise.all([
+    db
+      .select({ title: posts.title, dek: posts.dek, slug: posts.slug, publishedAt: posts.publishedAt })
+      .from(posts)
+      .where(inWindow(posts)),
+    db
+      .select({ title: recipes.title, dek: recipes.intro, slug: recipes.slug, publishedAt: recipes.publishedAt })
+      .from(recipes)
+      .where(inWindow(recipes)),
+  ]);
+
+  return [
+    ...weekPosts.map((p) => ({ ...p, kind: 'post' as const })),
+    ...weekRecipes.map((r) => ({ ...r, kind: 'recipe' as const })),
+  ].sort((a, b) => (a.publishedAt ?? 0) - (b.publishedAt ?? 0));
 }
 
 /**
@@ -122,7 +138,8 @@ function renderIssueText(opts: {
   for (const p of weekPosts) {
     lines.push(`— ${p.title}`);
     if (p.dek) lines.push(`  ${p.dek}`);
-    lines.push(`  ${siteUrl()}/thoughts/${p.slug}`, '');
+    const path = p.kind === 'recipe' ? 'recipes' : 'thoughts';
+    lines.push(`  ${siteUrl()}/${path}/${p.slug}`, '');
   }
   if (footerNote.trim()) lines.push(footerNote.trim(), '');
   lines.push('—', `Unsubscribe: ${unsubscribeUrl}`);

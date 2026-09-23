@@ -13,7 +13,9 @@ export type RecipeDraft = {
   intro: string;
   heroImage: string;
   handsOnMinutes: string;
+  handsOnApprox: boolean;
   totalMinutes: string;
+  totalApprox: boolean;
   baseServings: string;
   yieldLabel: string;
   ingredients: Ingredient[];
@@ -24,7 +26,7 @@ export type RecipeDraft = {
   publishedAtLocal: string;
 };
 
-const EMPTY_INGREDIENT: Ingredient = { qty: null, unit: '', name: '', fixed: false };
+const EMPTY_INGREDIENT: Ingredient = { qty: null, unit: '', name: '', fixed: false, approx: false };
 const EMPTY_STEP: Step = { lead: '', text: '' };
 
 export function RecipeForm({ draft }: { draft: RecipeDraft }) {
@@ -142,10 +144,18 @@ export function RecipeForm({ draft }: { draft: RecipeDraft }) {
         <label className={styles.field}>
           <span className={styles.label}>hands on (min)</span>
           <input className={styles.input} name="handsOnMinutes" type="number" defaultValue={draft.handsOnMinutes} />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6, fontSize: 12.5, color: 'var(--ink-quiet)' }}>
+            <input type="checkbox" name="handsOnApprox" defaultChecked={draft.handsOnApprox} />
+            ~ (an estimate, not exact)
+          </label>
         </label>
         <label className={styles.field}>
           <span className={styles.label}>total (min)</span>
           <input className={styles.input} name="totalMinutes" type="number" defaultValue={draft.totalMinutes} />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6, fontSize: 12.5, color: 'var(--ink-quiet)' }}>
+            <input type="checkbox" name="totalApprox" defaultChecked={draft.totalApprox} />
+            ~ (an estimate, not exact)
+          </label>
         </label>
         <label className={styles.field}>
           <span className={styles.label}>written for</span>
@@ -198,6 +208,17 @@ export function RecipeForm({ draft }: { draft: RecipeDraft }) {
                 onChange={(e) => patchIngredient(i, { fixed: e.target.checked })}
               />
               fixed
+            </label>
+            <label
+              style={{ flex: '0 0 auto', fontSize: 12.5, color: 'var(--ink-quiet)', display: 'flex', gap: 4, alignItems: 'center', paddingTop: 10 }}
+              title="Shows as ~2 cups instead of 2 cups"
+            >
+              <input
+                type="checkbox"
+                checked={Boolean(ing.approx)}
+                onChange={(e) => patchIngredient(i, { approx: e.target.checked })}
+              />
+              ~
             </label>
             <button
               type="button"
@@ -262,7 +283,7 @@ export function RecipeForm({ draft }: { draft: RecipeDraft }) {
       </div>
 
       <label className={styles.field}>
-        <span className={styles.label}>why this one</span>
+        <span className={styles.label}>author&rsquo;s notes</span>
         <textarea
           className={styles.input}
           style={{ minHeight: 110, resize: 'vertical' }}

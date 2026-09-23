@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
+import { NewsletterSubscribeBox } from '@/components/NewsletterSubscribeBox';
 import { Squiggle } from '@/components/Squiggle';
 import { getSettings } from '@/lib/queries';
 import { renderMarkdown } from '@/lib/markdown';
@@ -26,7 +27,7 @@ export default async function AboutPage() {
           dangerouslySetInnerHTML={{ __html: renderMarkdown(settings.aboutBody ?? '') }}
         />
       </main>
-      <SiteFooter note={settings.footerNote} />
+      <SiteFooter note={settings.footerNote} subscribeSlot={<NewsletterSubscribeBox />} />
     </>
   );
 }

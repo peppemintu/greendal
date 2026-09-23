@@ -18,7 +18,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <SiteHeader variant="home" tagline={settings.tagline} subscribeSlot={<NewsletterSubscribeBox />} />
+      <SiteHeader variant="home" tagline={settings.tagline} />
 
       <main className="shell">
         <div className={styles.split}>
@@ -91,7 +91,7 @@ export default async function HomePage() {
         </div>
       </main>
 
-      <SiteFooter note={settings.footerNote} />
+      <SiteFooter note={settings.footerNote} subscribeSlot={<NewsletterSubscribeBox />} />
     </>
   );
 }

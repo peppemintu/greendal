@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
+import { NewsletterSubscribeBox } from '@/components/NewsletterSubscribeBox';
 
 export default function NotFound() {
   return (
@@ -14,7 +15,7 @@ export default function NotFound() {
           <Link href="/recipes">the cupboard</Link>.
         </p>
       </main>
-      <SiteFooter />
+      <SiteFooter subscribeSlot={<NewsletterSubscribeBox />} />
     </>
   );
 }

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { confirmSubscription } from '@/lib/newsletter';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
+import { NewsletterSubscribeBox } from '@/components/NewsletterSubscribeBox';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'confirm your subscription', robots: { index: false, follow: false } };
@@ -35,7 +36,7 @@ export default async function ConfirmSubscriptionPage({
           <Link href="/">back to the site</Link>
         </p>
       </main>
-      <SiteFooter />
+      <SiteFooter subscribeSlot={<NewsletterSubscribeBox />} />
     </>
   );
 }

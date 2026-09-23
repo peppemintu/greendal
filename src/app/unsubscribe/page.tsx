@@ -3,6 +3,7 @@ import { findSubscriberByUnsubscribeToken } from '@/lib/newsletter';
 import { unsubscribeAction } from '@/lib/subscriberActions';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
+import { NewsletterSubscribeBox } from '@/components/NewsletterSubscribeBox';
 import styles from '@/styles/form.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -64,7 +65,7 @@ export default async function UnsubscribePage({
           <Link href="/">back to the site</Link>
         </p>
       </main>
-      <SiteFooter />
+      <SiteFooter subscribeSlot={<NewsletterSubscribeBox />} />
     </>
   );
 }

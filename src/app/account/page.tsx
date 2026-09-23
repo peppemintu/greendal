@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
+import { NewsletterSubscribeBox } from '@/components/NewsletterSubscribeBox';
 import { AccountPanel } from '@/components/AccountPanel';
 
 export const dynamic = 'force-dynamic';
@@ -31,7 +32,7 @@ export default async function AccountPage() {
           />
         </div>
       </main>
-      <SiteFooter />
+      <SiteFooter subscribeSlot={<NewsletterSubscribeBox />} />
     </>
   );
 }

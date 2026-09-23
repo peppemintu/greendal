@@ -5,6 +5,7 @@ import { authTokens, users } from '@/lib/schema';
 import { hashToken } from '@/lib/authTokens';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
+import { NewsletterSubscribeBox } from '@/components/NewsletterSubscribeBox';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'confirm your email' };
@@ -48,7 +49,7 @@ export default async function VerifyPage({
           </p>
         )}
       </main>
-      <SiteFooter />
+      <SiteFooter subscribeSlot={<NewsletterSubscribeBox />} />
     </>
   );
 }

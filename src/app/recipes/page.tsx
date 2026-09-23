@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
+import { NewsletterSubscribeBox } from '@/components/NewsletterSubscribeBox';
 import { listRecipes, getSettings } from '@/lib/queries';
 import { duration } from '@/lib/format';
 
@@ -47,7 +48,7 @@ export default async function RecipesIndex() {
           {items.length === 0 && <p style={{ color: 'var(--ink-quiet)' }}>Nothing cooked yet.</p>}
         </div>
       </main>
-      <SiteFooter note={settings.footerNote} />
+      <SiteFooter note={settings.footerNote} subscribeSlot={<NewsletterSubscribeBox />} />
     </>
   );
 }

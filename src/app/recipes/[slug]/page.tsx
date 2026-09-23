@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
+import { NewsletterSubscribeBox } from '@/components/NewsletterSubscribeBox';
 import { RecipeDetail } from '@/components/RecipeDetail';
 import { CommentSection } from '@/components/CommentSection';
 import { getRecipe, getSettings } from '@/lib/queries';
@@ -41,26 +42,30 @@ export default async function RecipePage({ params }: { params: Promise<{ slug: s
     <>
       <SiteHeader />
       <main className="shell" style={{ paddingTop: 44 }}>
-        <RecipeDetail
-          recipe={{
-            title: recipe.title,
-            intro: recipe.intro,
-            heroImage: recipe.heroImage,
-            handsOnMinutes: recipe.handsOnMinutes,
-            totalMinutes: recipe.totalMinutes,
-            baseServings: recipe.baseServings,
-            yieldLabel: recipe.yieldLabel,
-            ingredients: JSON.parse(recipe.ingredients) as Ingredient[],
-            steps: JSON.parse(recipe.steps) as Step[],
-            pullNote: recipe.pullNote,
-            headnote: recipe.headnote,
-          }}
-        />
-        <div style={{ maxWidth: 720, margin: '0 auto' }}>
-          <CommentSection target={{ recipeId: recipe.id }} nodes={thread.nodes} visibleCount={thread.visibleCount} />
+        <div className="sheet">
+          <RecipeDetail
+            recipe={{
+              title: recipe.title,
+              intro: recipe.intro,
+              heroImage: recipe.heroImage,
+              handsOnMinutes: recipe.handsOnMinutes,
+              handsOnApprox: Boolean(recipe.handsOnApprox),
+              totalMinutes: recipe.totalMinutes,
+              totalApprox: Boolean(recipe.totalApprox),
+              baseServings: recipe.baseServings,
+              yieldLabel: recipe.yieldLabel,
+              ingredients: JSON.parse(recipe.ingredients) as Ingredient[],
+              steps: JSON.parse(recipe.steps) as Step[],
+              pullNote: recipe.pullNote,
+              headnote: recipe.headnote,
+            }}
+          />
+          <div style={{ maxWidth: 720, margin: '0 auto' }}>
+            <CommentSection target={{ recipeId: recipe.id }} nodes={thread.nodes} visibleCount={thread.visibleCount} />
+          </div>
         </div>
       </main>
-      <SiteFooter note={settings.footerNote} />
+      <SiteFooter note={settings.footerNote} subscribeSlot={<NewsletterSubscribeBox />} />
     </>
   );
 }

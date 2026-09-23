@@ -43,6 +43,13 @@
       "when": 1789994855696,
       "tag": "0005_milky_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1790120360575,
+      "tag": "0006_little_puff_adder",
+      "breakpoints": true
     }
   ]
 }
