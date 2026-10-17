@@ -8,7 +8,7 @@ import { sessions, users, type UserRow } from './schema';
 
 const COOKIE = 'greendal_session';
 const SESSION_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
-/** Sliding expiry only writes to the DB (and re-sets the cookie) this often. */
+/** Sliding expiry only writes to the DB this often (middleware.ts slides the cookie). */
 const SESSION_REFRESH_AFTER = 60 * 60 * 24; // 1 day
 
 const SCRYPT_N = 16384;
@@ -104,10 +104,12 @@ export async function getCurrentUser(): Promise<UserRow | null> {
   const [user] = await db.select().from(users).where(eq(users.id, session.userId)).limit(1);
   if (!user || user.blockedAt || user.archivedAt) return null;
 
+  // Only the database row is extended here. This runs during Server
+  // Component rendering (the root layout), where setting a cookie throws —
+  // the browser cookie's sliding expiry is handled in middleware.ts instead.
   if (t - session.lastSeenAt > SESSION_REFRESH_AFTER) {
     const expiresAt = t + SESSION_MAX_AGE;
     await db.update(sessions).set({ lastSeenAt: t, expiresAt }).where(eq(sessions.id, token));
-    (await cookies()).set(COOKIE, token, cookieOptions(SESSION_MAX_AGE));
   }
 
   return user;

@@ -16,24 +16,11 @@
 export async function register() {
   // register() also runs for the Edge runtime (middleware's own instance);
   // only the Node process should own the timer, or two would fire the check.
-  if (process.env.NEXT_RUNTIME !== 'nodejs') return;
-
-  const { sendWeeklyIssueIfDue } = await import('@/lib/newsletter');
-  const CHECK_INTERVAL_MS = 60 * 60 * 1000;
-
-  const check = async () => {
-    try {
-      const result = await sendWeeklyIssueIfDue();
-      if (result.sent) {
-        console.log(
-          `[newsletter] sent this week's letter — ${result.postCount} post(s), ${result.recipientCount} recipient(s)`,
-        );
-      }
-    } catch (err) {
-      console.error('[newsletter] scheduled send check failed', err);
-    }
-  };
-
-  check(); // catch up immediately in case the process was down when the week rolled over
-  setInterval(check, CHECK_INTERVAL_MS);
+  // This has to be an `if` block wrapping the import, not an early return:
+  // Next only strips the Node-only import (better-sqlite3, via newsletter)
+  // from the Edge bundle when it sits inside this exact condition.
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    const { startNewsletterSchedule } = await import('./instrumentation-node');
+    startNewsletterSchedule();
+  }
 }
